@@ -1,0 +1,16 @@
+name = "Astrometry"
+uuid = "f1a567a2-b8c3-46a6-a8e4-0d50b742dea6"
+authors = ["Paul Barrett <pebarrett@gmail.com> and contributors"]
+version = "1.0.0-DEV"
+
+[deps]
+Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
+
+[compat]
+julia = "1.7"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
