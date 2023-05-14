@@ -16,7 +16,7 @@ function equinox(date, model=:iau2006a)
         ψn, ϵn = iau_2000b_nutation(date)
         equinox = ψn * cos(ϵA) + equinox_complement(date)
     elseif model == :iau2006
-        equinox = rem2pi(gst_2006a(0.0, date) - gmst_2006(0.0, date), RoundNearest)
+        equinox = rem2pi(iau_2006a_gst(0.0, date) - iau_2006_gmst(0.0, date), RoundNearest)
     end
 
     return equinox

@@ -3,12 +3,15 @@
 #   Initial obliquity of the ecliptic in arcseconds
 const ϵ0_2000 = 84381.448
 
+#   Earth rotation angle
+const era_2000 = [0.7790572732640, 0.00273781191135448]
+
 #   Precession model constants in mas (Lieske et al. 1977)
 const ψ_1977 = [    0.0, 5038.7784, -1.07259, -0.001147]
 const ω_1977 = [ϵ0_2000,    0.0,     0.05127, -0.007726]
 const χ_1977 = [    0.0,   10.5526, -2.38064, -0.001125]
 
-#   Frame bias model constants in mas 
+#   Frame bias model constants in mas
 const icrs_ra_2000 = -0.0146
 const ψ_bias_2000  = -0.041775
 const ϵ_bias_2000  = -0.0068192

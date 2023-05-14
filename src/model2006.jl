@@ -106,10 +106,35 @@ function iau_2006_cip_xy(date)
     deg2rad(1/3600).*(xypr .+ 1e-6 .* (xyls .+ xypl))
 end
 
-function iau_2006_crs_cis(date)
+"""
+    iau_2006a_crs_cis(date)
+
+Generate the celestial reference system (CRS) to celestial intermediate system
+(CIS) transform matrix given the CIP X & Y coordinates and the CIO locator S
+for the specified date using the IAU 2006/2000A precession nutation model.
+
+"""
+function iau_2006a_crs_cis(date)
+    
+    pnmat = precession_nutation(tt; model=:iau2006a)
+    cio_s = iau_2006_cio_locator(tt, pnmat[3,1:2])
+    E = (x*x+y*y) > 0.0 ? atan(y, x) : 0.0
+    d = atan(sqrt((x*x+y*y)/(1-(x*x+y*y))))
+    Rz(-(E+cio_s))Ry(d)Rz(E)
 end
 
-function iau_2006_crs_trs(date)
+"""
+    iau_2006a_crs_trs(date)
+
+Generate the celestial reference system (CRS) to terrestrial reference system
+(TRS) transform matrix given given the date, UT1, and polar motion using the
+IAU 2006/2000A precession nutation model.
+
+"""
+function iau_2006_crs_trs(date, ut1, pole)
+
+    c2i = iau_2006a_crs_cis(date)
+    
 end
 
 function iau_2006_ecliptic_equator(date, position)
@@ -134,8 +159,16 @@ function iau_2006a_gst(utc, tt)
     iau_2000_era(utc) - Eors(pnmat, cio_s)
 end
 
-function iau_2006_gmst(utc, tt)
+"""
+    iau_2006_gmst(ut1, tt)
+
+Greenwich Mean Sidereal Time (GMST) for the specified UT1 and TT dates.
+"""
+function iau_2006_gmst(date1, date2)
+
+    Δt = (date2 - JD2000)/(100*DAYPERYEAR)
     
+    rem2pi(iau_era_2000(date1) + deg2rad(1/3600)*Polynomial(gmst_2006, :Δt)(Δt))
 end
 
 function iau_2006a_nutation(date)

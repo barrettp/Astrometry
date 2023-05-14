@@ -21,6 +21,16 @@ end
 
 include("constants2000.jl")
 
+"""
+    iau_2000_earth_rotation(date)
+
+Earth rotation angle (IAU 2000)
+"""
+function iau_2000_earth_rotation(date)
+    
+    rem2pi(mod(date) + Polynomial(era_2000, :Δt)(date - JD2000))
+end
+
 function iau_2000_equinox_complement(date)
 
     Δt = (date - JD2000)/(100*DAYPERYEAR)

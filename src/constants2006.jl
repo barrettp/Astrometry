@@ -3,8 +3,8 @@
 #   Initial obliquity of the ecliptic in arcseconds
 const ϵ0_2006 = 84381.406
 
-#   Frame bias model constants in mas
-
+#   Greenwich Mean Sidereal Time
+const gmst_2006 = [0.014506, 4612.156534, 1.3915817, -0.00000044, -0.000029956, -0.0000000368]
 
 #   Lunar-solar precession
 const ψA_2006 = [0.0,  5038.481507, -1.0790069, -0.00114045, 0.000132851, -0.0000000951]
