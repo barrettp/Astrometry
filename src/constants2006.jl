@@ -1,5 +1,8 @@
 #   IAU 2006 Model
 
+#   Earth rotation rate
+const Ω_Earth_2003 = 1.00273781191135448
+
 #   Initial obliquity of the ecliptic in arcseconds
 const ϵ0_2006 = 84381.406
 
@@ -9,15 +12,15 @@ const gmst_2006 = [0.014506, 4612.156534, 1.3915817, -0.00000044, -0.000029956, 
 #   Lunar-solar precession
 const ψA_2006 = [0.0,  5038.481507, -1.0790069, -0.00114045, 0.000132851, -0.0000000951]
 #   Inclination of mean equator with respect to the J2000.0 ecliptic
-const ΩA_2006 = [ϵ0_2006, -0.025754, 0.0512623, -0.00772503, -0.000000467, 0.0000003337]
+const ωA_2006 = [ϵ0_2006, -0.025754, 0.0512623, -0.00772503, -0.000000467, 0.0000003337]
 #   Ecliptic pole x, J2000.0 ecliptic triad
-const xA_2006 = [0.0,     4.199094, 0.1939873, -0.00022466, -0.000000912, 0.0000000120]
+const PA_2006 = [0.0,     4.199094, 0.1939873, -0.00022466, -0.000000912, 0.0000000120]
 #   Ecliptic pole -y, J2000.0 ecliptic triad
-const yA_2006 = [0.0,   -46.811015, 0.0510283, 0.00052413, -0.000000646, -0.0000000172]
+const QA_2006 = [0.0,   -46.811015, 0.0510283, 0.00052413, -0.000000646, -0.0000000172]
 #   Angle between the moving and J2000.0 ecliptics
 const πA_2006 = [0.0,    46.998973, -0.0334926, -0.00012559, 0.000000113, -0.0000000022]
 #   Longitude of ascending node of the moving ecliptic
-const πAb_2006 = [629546.7936, -867.95758, 0.157992, -0.0005371, -0.00004797, 0.000000072]
+const ΠA_2006 = [629546.7936, -867.95758, 0.157992, -0.0005371, -0.00004797, 0.000000072]
 #   Mean obliquity of the ecliptic
 const ϵA_2006 = [ϵ0_2006, -46.836769, -0.0001831, 0.00200340, -0.000000576, -0.0000000434]
 #   Planetary precession
@@ -945,8 +948,10 @@ const tdb_tt_2003_4::Array{Float64,2} = reshape([
        0.000303e-6,    12566.151699983,  5.407132842,
        0.000209e-6,      155.420399434,  1.989815753], (3,:))
 
+####    Fundamental argument multipliers:
+#
 #   Luni-solar coefficients
-const mfals_2006::Vector{Vector{Int8}} = [
+const cip_lunisolar_2006::Vector{Vector{Int8}} = [
     # 1-10
     [ 0,   0,   0,   0,   1],
     [ 0,   0,   2,  -2,   2],
@@ -1667,7 +1672,7 @@ const mfals_2006::Vector{Vector{Int8}} = [
     [ 1,   0,  -2,   0,  -3],
     [ 0,   0,   4,  -4,   4]]
 
-const mfapl_2006::Vector{Vector{Int8}} = [
+const cip_planetary_2006::Vector{Vector{Int8}} = [
     # 1-10
     [ 0,  0,  1, -1,  1,  0,  0, -1,  0, -2,  5,  0,  0,  0],
     [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  2, -5,  0,  0, -1],
@@ -2392,7 +2397,7 @@ const mfapl_2006::Vector{Vector{Int8}} = [
     [ 0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0]]
 
 #   Offsets into amplitude coefficient array ????
-const pntr_2006::Vector{Int16} = [
+const cip_pointer_2006::Vector{Int16} = [
     # 1-100
        1,    21,    37,    51,    65,    79,    91,   103,   115,   127,
      139,   151,   163,   172,   184,   196,   207,   219,   231,   240,
@@ -2540,7 +2545,7 @@ const pntr_2006::Vector{Int16} = [
     4737,  4740,  4741,  4742,  4745,  4746,  4749,  4752,  4753]
 
 # Amplitude coefficients
-const ampl_2006::Vector{Float64} = [
+const cip_amplitude_2006::Vector{Float64} = [
     # 1-105
          -6844318.44,     9205236.26,1328.67,1538.18,      205833.11,
            153041.79,       -3309.73, 853.32,2037.98,       -2301.27,

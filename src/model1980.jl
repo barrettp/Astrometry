@@ -25,22 +25,16 @@ function iau_1980_nutation(date::AbstractFloat)
 
     Δt  = (date - JD2000)/(100*DAYPERYEAR)
     
-    longitude = rem2pi.([
-        2pi*rem(l0_1980t*Δt, 1) + deg2rad(1/3600)*Polynomial(l0_1980, :Δt)(Δt),
-        2pi*rem(l1_1980t*Δt, 1) + deg2rad(1/3600)*Polynomial(l1_1980, :Δt)(Δt),
-        2pi*rem( F_1980t*Δt, 1) + deg2rad(1/3600)*Polynomial( F_1980, :Δt)(Δt),
-        2pi*rem( D_1980t*Δt, 1) + deg2rad(1/3600)*Polynomial( D_1980, :Δt)(Δt),
-        2pi*rem( Ω_1980t*Δt, 1) + deg2rad(1/3600)*Polynomial( Ω_1980, :Δt)(Δt)],
-                        RoundNearest)
+    l = 2π*rem.([l0_1980t, l1_1980t, F_1980t, D_1980t, Ω_1980t].*Δt, 1.0) .+
+        deg2rad.([Polynomial(l0_1980, :Δt)(Δt), Polynomial(l1_1980, :Δt)(Δt),
+                  Polynomial( F_1980, :Δt)(Δt), Polynomial( D_1980, :Δt)(Δt),
+                  Polynomial( Ω_1980, :Δt)(Δt)]./3600.0)
 
-    ψ, ϵ = 0., 0.
-    for term in Iterators.reverse(iau_1980_nutation_series)
-        Δr = sum(term.ic.*longitude)
-        ψ += (term.fc[1] + term.fc[2]*Δt)*sin(Δr)
-        ϵ += (term.fc[3] + term.fc[4]*Δt)*cos(Δr)
-    end
-
-    deg2rad(1e-4/3600).*(ψ, ϵ)
+    ln = vcat([t.n' for t in iau_1980_nutation_series]...)
+    la = vcat([t.a' for t in iau_1980_nutation_series]...)
+    ϕl = ln*rem2pi.(l, RoundNearest)
+    deg2rad.((sum((la[:,1] .+ la[:,2].*Δt).*sin.(ϕl)),
+              sum((la[:,3] .+ la[:,4].*Δt).*cos.(ϕl)))./3.6e7)
 end
 
 """

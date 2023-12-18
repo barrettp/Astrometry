@@ -1,22 +1,3 @@
-struct Equinox2000
-    ic::Vector{Int8}
-    fc::Vector{Float64}
-end
-
-struct Lunisolar2000
-    ic::Vector{Int8}
-    #    P::Float64      # (days)
-    # the following units are in 0.1 μas
-    fc::Vector{Float64}
-end
-
-struct Planetary2000
-    ic::Vector{Int8}
-    #    P::Float64      # (days)
-    # the following units are in 0.1 μas
-    fc::Vector{Float64}
-end
-
 # IAU 2000 Model
 
 include("constants2000.jl")
@@ -35,27 +16,20 @@ function iau_2000_equinox_complement(date)
 
     Δt = (date - JD2000)/(100*DAYPERYEAR)
 
-    longitude = deg2rad(1/3600).*rem.([
-        Polynomial(l0_2003A, :Δt)(Δt),
-        Polynomial(l1_2003A, :Δt)(Δt),
-        Polynomial( F_2003A, :Δt)(Δt),
-        Polynomial( D_2000A, :Δt)(Δt),
-        Polynomial( Ω_2003A, :Δt)(Δt)], ARCSECPER2PI)
-    append!(longitude, [
-        Polynomial( lve_2003, :Δt)(Δt),
-        Polynomial( lea_2003, :Δt)(Δt),
+    ϕ = deg2rad.(rem.([
+        Polynomial(l0_2003A, :Δt)(Δt), Polynomial(l1_2003A, :Δt)(Δt),
+        Polynomial( F_2003A, :Δt)(Δt), Polynomial( D_2000A, :Δt)(Δt),
+        Polynomial( Ω_2003A, :Δt)(Δt)], ARCSECPER2PI)./3600)
+    append!(ϕ, [
+        Polynomial( lve_2003, :Δt)(Δt), Polynomial( lea_2003, :Δt)(Δt),
         Polynomial( lge_2003, :Δt)(Δt)])
     
-    sum0, sum1 = 0., 0.
-    for term in Iterators.reverse(iau_2000_equinox_0_series)
-        sum0 += sum(term.fc.*sincos(sum(term.ic.*longitude)))
-    end
-
-    for term in Iterators.reverse(iau_2000_equinox_1_series)
-        sum1 += sum(term.fc.*sincos(sum(term.ic.*longitude)))
-    end
-
-    deg2rad(1/3600)*(sum0 + sum1*Δt)
+    en0 = vcat([t.n' for t in iau_2000_equinox_0_series]...)
+    ea0 = vcat([t.a' for t in iau_2000_equinox_0_series]...)
+    en1 = vcat([t.n' for t in iau_2000_equinox_1_series]...)
+    ea1 = vcat([t.a' for t in iau_2000_equinox_1_series]...)
+    deg2rad((sum(ea0[:,1].*sin.(en0*ϕ) .+ ea0[:,2].*cos.(en0*ϕ)) +
+             sum(ea1[:,1].*sin.(en1*ϕ) .+ ea1[:,2].*cos.(en1*ϕ))*Δt)/3600)
 end
 
 function iau_2000_gmst(ut, tt)
@@ -63,9 +37,9 @@ end
 
 function ephem_position(coef0, coef1, coef2, Δt)
 
-    A0, ϕ0, ν0 = coef0[1,:], coef0[2,:], coef0[3,:]
-    A1, ϕ1, ν1 = coef1[1,:], coef1[2,:], coef1[3,:]
-    A2, ϕ2, ν2 = coef2[1,:], coef2[2,:], coef2[3,:]
+    A0, ϕ0, ν0 = [coef0[j,:] for j=1:3]
+    A1, ϕ1, ν1 = [coef1[j,:] for j=1:3]
+    A2, ϕ2, ν2 = [coef2[j,:] for j=1:3]
 
     (sum(A0 .* cos.(ϕ0 .+ ν0 .* Δt)) +
      sum(A1 .* cos.(ϕ1 .+ ν1 .* Δt))*Δt +
@@ -161,45 +135,33 @@ function iau_2000a_nutation(date)
     ###  Luni-solar Nutation
     
     # Fundamental (Delauney) arguments
-    longitude = deg2rad(1/3600).*rem.([
-        Polynomial(l0_2003A, :Δt)(Δt),
-        Polynomial(l1_2000A, :Δt)(Δt),
-        Polynomial( F_2003A, :Δt)(Δt),
-        Polynomial( D_2000A, :Δt)(Δt),
-        Polynomial( Ω_2003A, :Δt)(Δt)], ARCSECPER2PI)
+    ϕ = deg2rad.(rem.(
+        [Polynomial(l0_2003A, :Δt)(Δt), Polynomial(l1_2000A, :Δt)(Δt),
+         Polynomial( F_2003A, :Δt)(Δt), Polynomial( D_2000A, :Δt)(Δt),
+         Polynomial( Ω_2003A, :Δt)(Δt)], ARCSECPER2PI)/3600)
 
-    ψl, ϵl = 0., 0.
-    for term in Iterators.reverse(iau_2000a_nutation_lunisolar_series)
-        Δr = rem2pi(sum(term.ic.*longitude), RoundToZero)
-        ψl += sum((term.fc[1] + term.fc[2]*Δt, term.fc[3]).*sincos(Δr))
-        ϵl += sum((term.fc[6], term.fc[4] + term.fc[5]*Δt).*sincos(Δr))
-    end
+    lϕ  = rem2pi.(vcat([t.n' for t in iau_2000A_nutation_lunisolar_series]...)*ϕ, RoundToZero)
+    la  = vcat([t.a' for t in iau_2000A_nutation_lunisolar_series]...)
+    ψl = sum((la[:,1] .+ la[:,2].*Δt).*sin.(lϕ) .+ la[:,3].*cos.(lϕ))
+    ϵl = sum(la[:,6].*sin.(lϕ) .+ (la[:,4] .+ la[:,5].*Δt).*cos.(lϕ))
 
     ###  Planetary Nutation
 
-    longitude = rem2pi.([
-        Polynomial(l0_2000A_planet, :Δt)(Δt),
-        Polynomial( F_2000A_planet, :Δt)(Δt),
-        Polynomial( D_2000A_planet, :Δt)(Δt),
-        Polynomial( Ω_2000A_planet, :Δt)(Δt),
-        Polynomial(lme_2003, :Δt)(Δt),
-        Polynomial(lve_2003, :Δt)(Δt),
-        Polynomial(lea_2003, :Δt)(Δt),
-        Polynomial(lma_2003, :Δt)(Δt),
-        Polynomial(lju_2003, :Δt)(Δt),
-        Polynomial(lsa_2003, :Δt)(Δt),
-        Polynomial(lur_2003, :Δt)(Δt),
-        Polynomial(lne_2003mhb, :Δt)(Δt)], RoundToZero)
-    push!(longitude, Polynomial(lge_2003, :Δt)(Δt))
+    ϕ = rem2pi.([
+        Polynomial(l0_2000A_planet, :Δt)(Δt), Polynomial( F_2000A_planet, :Δt)(Δt),
+        Polynomial( D_2000A_planet, :Δt)(Δt), Polynomial( Ω_2000A_planet, :Δt)(Δt),
+        Polynomial(lme_2003, :Δt)(Δt), Polynomial(lve_2003, :Δt)(Δt),
+        Polynomial(lea_2003, :Δt)(Δt), Polynomial(lma_2003, :Δt)(Δt),
+        Polynomial(lju_2003, :Δt)(Δt), Polynomial(lsa_2003, :Δt)(Δt),
+        Polynomial(lur_2003, :Δt)(Δt), Polynomial(lne_2003mhb, :Δt)(Δt)], RoundToZero)
+    push!(ϕ, Polynomial(lge_2003, :Δt)(Δt))
 
-    ψp, ϵp = 0., 0.
-    for term in Iterators.reverse(iau_2000a_nutation_planetary_series)
-        Δr = rem2pi(sum(term.ic.*longitude), RoundToZero)
-        ψp += sum(term.fc[1:2].*sincos(Δr))
-        ϵp += sum(term.fc[3:4].*sincos(Δr))
-    end
+    pϕ = rem2pi.(vcat([t.n' for t in iau_2000A_nutation_planetary_series]...)*ϕ, RoundToZero)
+    pa = vcat([t.a' for t in iau_2000A_nutation_planetary_series]...)
+    ψp = sum(pa[:,1].*sin.(pϕ) .+ pa[:,2].*cos.(pϕ))
+    ϵp = sum(pa[:,3].*sin.(pϕ) .+ pa[:,4].*cos.(pϕ))
 
-    deg2rad(1e-7/3600).*(ψl + ψp, ϵl + ϵp)
+    deg2rad.((ψl + ψp, ϵl + ϵp)./3.6e10)
 end
 
 function iau_2000a_xys(date)
@@ -226,21 +188,16 @@ function iau_2000b_nutation(date)
     ###  Luni-solar Nutation
     
     # Fundamental (Delauney) arguments from Simon et al. (1994)
-    longitude = deg2rad(1/3600).*rem.([
-        Polynomial(l0_2000B, :Δt)(Δt),
-        Polynomial(l1_2000B, :Δt)(Δt),
-        Polynomial( F_2000B, :Δt)(Δt),
-        Polynomial( D_2000B, :Δt)(Δt),
-        Polynomial( Ω_2000B, :Δt)(Δt)], ARCSECPER2PI)
+    ϕ = deg2rad(1/3600).*rem.([Polynomial(l0_2000B, :Δt)(Δt),
+        Polynomial(l1_2000B, :Δt)(Δt), Polynomial( F_2000B, :Δt)(Δt),
+        Polynomial( D_2000B, :Δt)(Δt), Polynomial( Ω_2000B, :Δt)(Δt)], ARCSECPER2PI)
 
-    ψl, ϵl = 0.0, 0.0
-    for term in Iterators.reverse(iau_2000b_nutation_lunisolar_series)
-        Δr = rem2pi(sum(term.ic.*longitude), RoundToZero)
-        ψl += sum((term.fc[1] + term.fc[2]*Δt, term.fc[3]).*sincos(Δr))
-        ϵl += sum((term.fc[6], term.fc[4] + term.fc[5]*Δt).*sincos(Δr))
-    end
+    lϕ = rem2pi.(vcat([t.n' for t in iau_2000B_nutation_lunisolar_series]...)*ϕ, RoundToZero)
+    la = vcat([t.a' for t in iau_2000B_nutation_lunisolar_series]...)
+    ψl = sum((la[:,1] .+ la[:,2].*Δt).*sin.(lϕ) .+ la[:,3].*cos.(lϕ))
+    ϵl = sum(la[:,6].*sin.(lϕ) .+ (la[:,4] .+ la[:,5].*Δt).*cos.(lϕ))
 
-    deg2rad(1e-7/3600).*(ψl + 1e4*ψ_2000B_planet, ϵl + 1e4*ϵ_2000B_planet)
+    deg2rad.((ψl + 1e4*ψ_2000B_planet, ϵl + 1e4*ϵ_2000B_planet)./3.6e10)
 end
 
 function iau_2000b_xys(date)

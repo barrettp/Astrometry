@@ -2,19 +2,32 @@ const SECPERDAY = 86400
 const ASTRUNIT = 1.495978707e11
 const LIGHTSPEED = 299792458.0
 const AULIGHT = ASTRUNIT/LIGHTSPEED/SECPERDAY/DAYPERYEAR
-const daypermonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+const MJDAY0 = 2400000.5
+const MODJULDAY0 = 51544.5
+const JULIANDAY2000 = 2451545.0
+const DAYINYEAR1900 = 365.242198781
+const DAYINYEAR2000 = 365.25
+const DAYINMONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+struct PeriodicTerms
+    #  angular harmonics
+    n::Vector{Int8}
+    #  amplitude coefficients
+    a::Vector{Float64}
+end
 
 # getindex(type, field) = [j for (j,f)=enumerate(fieldnames(type)) if f==field][1]
 # getfields(term, field) = [getfield(term, j) for j=1:getindex(typeof(term), field)]
 # getfields(term, N) = [getfield(term, j) for j=1:N]
 
-Rx(θ) = [1 0 0; 0 cos(θ) sin(θ); 0 -sin(θ) cos(θ)]
-Ry(θ) = [cos(θ) 0 -sin(θ); 0 1 0; sin(θ) 0 cos(θ)]
-Rz(θ) = [cos(θ) sin(θ) 0; -sin(θ) cos(θ) 0; 0 0 1]
+Rx(θ) = [1. 0. 0.; 0. cos(θ) sin(θ); 0. -sin(θ) cos(θ)]
+Ry(θ) = [cos(θ) 0. -sin(θ); 0. 1. 0.; sin(θ) 0. cos(θ)]
+Rz(θ) = [cos(θ) sin(θ) 0.; -sin(θ) cos(θ) 0.; 0. 0. 1.]
+vec2mat(v) = [0. -v[3] v[2]; v[3] 0. -v[1]; -v[2] v[1] 0.]
 
 norm2(v) = sqrt(sum(v.*v))
 
-function leapday(year, month)
+function leapday(year::Integer, month::Integer)
     month == 2 && year%4 == 0 && (year%100 != 0 || year%400 == 0)
 end
 
@@ -25,11 +38,12 @@ function radec2rad(coord::Tuple{String, String})
      deg2rad(Integer(dec[1]) + Integer(dec[2])/60 + Integer(dec[3])/3600))
 end
 
-function calendar_mjd(year::Integer, month::Integer, day::Integer)
+function calendar2MJD(year::Integer, month::Integer, day::Integer)
     
-    @assert -4799 <= year
-    @assert 1 <= month <= 12
-    @assert 1 <= day <= (daypermonth[month] + (leapday(year, month) ? 1 : 0))
+    @assert -4799 <= year "Year less than -4799."
+    @assert 1 <= month <= 12 "Month out of range [1-12]."
+    dayinmonth = DAYINMONTH[month] + (leapday(year, month) ? 1 : 0)
+    @assert 1 <= day <= dayinmonth "Day out of range [1-$dayinmonth]."
 
     ((Int64(1461)*(year + (month - 14)÷12 + 4800))÷4 +
      (Int64(367) *(month - 2 - 12*((month - 14)÷12)))÷12 -
