@@ -1,17 +1,20 @@
 #### Vector-Matrix / Angle Operations
 
 """
+    a2af(ndp::Integer, angle::Float64)
+
 Decompose radians into degrees, arcminutes, arcseconds, and fraction.
 
-# Arguments
-- `npd::Integer`: number of useful digits
-- `angle::Float64`: angle in radians
+# Input
 
-# Returns
-- `dms::NamedTuple{(:sign, :degree, :minute, :second, :fraction)}`:
-   angle in sign, degrees, minutes, seconds, and fraction
+ - `npd`   --number of useful digits
+ - `angle` -- angle in radians
 
-Notes:
+# Output
+
+ - `dms`   -- angle in sign, degrees, minutes, seconds, and fraction
+
+# Note
 
 1) The argument ndp is interpreted as follows:
 
@@ -31,8 +34,8 @@ Notes:
     :            0 00 00.000...
 
 2) The largest positive useful value for ndp is determined by the size
-   of angle, the format of Float64 on the target platform, and the risk
-   of overflowing dms[3].  On a typical platform, for angle up to
+   of angle, the format of Float64 on the target platform, and the
+   risk of overflowing dms[3].  On a typical platform, for angle up to
    2pi, the available floating-point precision might correspond to
    ndp=12.  However, the practical limit is typically ndp=9, set by
    the capacity of a 32-bit int, or ndp=4 if int is only 16 bits.
@@ -48,17 +51,19 @@ function a2af(ndp::Integer, angle::Float64)
 end
 
 """
+    a2tf(ndp::Integer, angle::Float64)
+
 Decompose radians into hours, minutes, seconds, and fraction.
 
-# Arguments
-- `npd::Integer`: number of useful digits
-- `angle::Float64`: angle in radians
+# Input
 
-# Returns
-- `hms::NamedTuple{(:sign, :hour, :minute, :second, :fraction)}`:
-   angle in sign, hour, minutes, seconds, and fraction
+ - `npd`   -- number of useful digits
+ - `angle` -- angle in radians
 
-Notes:
+# Output
+ - `hms`   -- angle in sign, hour, minutes, seconds, and fraction
+
+# Note
 
 1) The argument ndp is interpreted as follows:
 
@@ -78,8 +83,8 @@ Notes:
     :            0 00 00.000...
 
 2) The largest positive useful value for ndp is determined by the size
-   of angle, the format of Float64 on the target platform, and the risk
-   of overflowing hms[3].  On a typical platform, for angle up to
+   of angle, the format of Float64 on the target platform, and the
+   risk of overflowing hms[3].  On a typical platform, for angle up to
    2pi, the available floating-point precision might correspond to
    ndp=12.  However, the practical limit is typically ndp=9, set by
    the capacity of a 32-bit int, or ndp=4 if int is only 16 bits.
@@ -87,33 +92,37 @@ Notes:
 3) The absolute value of angle may exceed 2pi.  In cases where it does
    not, it is up to the caller to test for and handle the case where
    days is very nearly 2pi and rounds up to 2pi and rounds up to 24
-   hours, by testing for hms[0]=24 and setting hms[0-3] to zero.
+   hours, by testing for ihmsf[0]=24 and setting ihmsf[0-3] to zero.
 """
 function a2tf(ndp::Integer, angle::Float64)
     NamedTuple{(:sign, :hour, :minute, :second, :fraction)}(d2tf(ndp, angle/2/pi))
 end
 
 """
-    Convert degrees, arcminutes, arcseconds to radians.
+    af2a(sign::Char, degree::Integer, minute::Integer, second::Float64)
 
-# Arguments
-- `sign::Character`: sign of arc
-- `degree::Integer`: degrees of arc
-- `minute::Integer`: minutes of arc
-- `second::Integer`: seconds of arc
+Convert degrees, arcminutes, arcseconds to radians.
 
-# Returns
-- `angle::Float64`: angle in radians
+# Input
 
-Notes:
+ - `sign`   -- sign of arc
+ - `degree` -- degrees of arc
+ - `minute` -- minutes of arc
+ - `second` -- seconds of arc
 
-1)  The result is computed even if any of the range checks fail.
+# Output
 
-2)  Negative ideg, iamin and/or asec produce a warning status, but
-    the absolute value is used in the conversion.
+ - `angle`  -- angle in radians
 
-3)  If there are multiple errors, the status value reflects only the
-    first, the smallest taking precedence.
+# Note
+
+1) The result is computed even if any of the range checks fail.
+
+2) Negative ideg, iamin and/or asec produce a warning status, but the
+   absolute value is used in the conversion.
+
+3) If there are multiple errors, the status value reflects only the
+   first, the smallest taking precedence.
 """
 function af2a(sign::Char, degree::Integer, minute::Integer, second::Float64)
     @assert 0   <= degree < 360  "degree out of range [0-359]."
@@ -125,45 +134,54 @@ function af2a(sign::Char, degree::Integer, minute::Integer, second::Float64)
 end
 
 """
-    Normalize angle into the range 0 <= a < 2p.
+    anp(angle::Float64)
 
-# Arguments
-- `angle::Float64`: angle in radians
+Normalize angle into the range 0 <= a < 2p.
 
-# Returns
-- `angle::Float64`: angle in radians in range 0-2pi
+# Input
+
+ - `angle` -- angle in radians
+
+# Output
+
+ - `angle` -- angle in radians in range 0-2pi
 """
 function anp(angle::Float64)
     mod2pi(angle)
 end
 
 """
-    Normalize angle into the range -pi <= a < +pi
+    anpm(angle::Float64)
 
-# Arguments
-- `angle::Float64`: angle in radians
+Normalize angle into the range -pi <= a < +pi
 
-# Returns
-- `angle::Float64`: angle in radians in range +/-pi
+# Input
+
+ - `angle` -- angle in radians
+
+# Output
+
+ - `angle` -- angle in radians in range +/-pi
 """
 function anpm(angle::Float64)
     rem2pi(angle, RoundNearest)
 end
 
 """
-    d2tf(ndp, day)
+    d2tf(ndp::Integer, day::Float64)
 
 Decompose days to sign, hours, minutes, seconds, fraction.
 
-# Arguments
-- `npd::Integer`: number of usefule digits
-- `day::Float64`: interval in days
+# Input
 
-# Returns
-- `hms::NamedTuple{(:sign, :hour, :minute, :second, :fraction)}`:
-hms in sign, hours, minutes, seconds, and fraction
+ - `npd`   -- number of usefule digits
+ - `day`   -- interval in days
 
-Notes:
+# Output
+
+ - `hms`   -- hms in sign, hours, minutes, seconds, and fraction
+
+# Note
 
 1) The argument ndp is interpreted as follows:
 
@@ -184,15 +202,15 @@ Notes:
 
 2) The largest positive useful value for ndp is determined by the size
    of days, the format of Float64 on the target platform, and the risk
-   of overflowing hms[3].  On a typical platform, for days up to
-   1.0, the available floating-point precision might correspond to
-   ndp=12.  However, the practical limit is typically ndp=9, set by
-   the capacity of a 32-bit int, or ndp=4 if int is only 16 bits.
+   of overflowing hms[3].  On a typical platform, for days up to 1.0,
+   the available floating-point precision might correspond to ndp=12.
+   However, the practical limit is typically ndp=9, set by the
+   capacity of a 32-bit int, or ndp=4 if int is only 16 bits.
 
 3) The absolute value of days may exceed 1.0.  In cases where it does
    not, it is up to the caller to test for and handle the case where
    days is very nearly 1.0 and rounds up to 24 hours, by testing for
-   hms[0]=24 and setting hms[0-3] to zero.
+   ihmsf[0]=24 and setting ihmsf[0-3] to zero.
 """
 function d2tf(ndp::Integer, day::Float64)
 
@@ -219,26 +237,30 @@ function d2tf(ndp::Integer, day::Float64)
 end
 
 """
-    Convert hours, minutes, seconds to radians.
+    tf2a(sign::Char, hour::Integer, minute::Integer, second::Float64)
 
-# Arguments
-- `sign::Char`: sign:  '-' = negative, otherwise positive
-- `hour::Integer`: hours
-- `minute::Integer`: minutes
-- `second::Integer`: seconds
+Convert hours, minutes, seconds to radians.
 
-# Returns
-- `angle::Float64`: angle in radians
+# Input
 
-Notes:
+ - `sign`   -- sign:  '-' = negative, otherwise positive
+ - `hour`   -- hours
+ - `minute` -- minutes
+ - `second` -- seconds
 
-1)  The result is computed even if any of the range checks fail.
+# Output
 
-2)  Negative ihour, imin and/or sec produce a warning status, but
-    the absolute value is used in the conversion.
+ - `angle`  -- angle in radians
 
-3)  If there are multiple errors, the status value reflects only the
-    first, the smallest taking precedence.
+# Note
+
+1) The result is computed even if any of the range checks fail.
+
+2) Negative ihour, imin and/or sec produce a warning status, but the
+   absolute value is used in the conversion.
+
+3) If there are multiple errors, the status value reflects only the
+   first, the smallest taking precedence.
 """
 function tf2a(sign::Char, hour::Integer, minute::Integer, second::Float64)
     @assert 0   <= hour   <   24  "hour out of range [0-23]."
@@ -250,26 +272,30 @@ function tf2a(sign::Char, hour::Integer, minute::Integer, second::Float64)
 end
 
 """
-    Convert hours, minutes, seconds to days.
+    tf2d(sign::Char, hour::Integer, minute::Integer, second::Float64)
 
-# Arguments
-- `sign::Char`: sign:  '-' = negative, otherwise positive
-- `hour::Integer`: hours
-- `minute::Integer`: minutes
-- `second::Integer`: seconds
+Convert hours, minutes, seconds to days.
 
-# Returns
-- `day::Float64`: interval in days
+# Input
 
-Notes:
+ - `sign`   -- sign:  '-' = negative, otherwise positive
+ - `hour`   -- hours
+ - `minute` -- minutes
+ - `second` -- seconds
 
-1)  The result is computed even if any of the range checks fail.
+# Output
 
-2)  Negative ihour, imin and/or sec produce a warning status, but
-    the absolute value is used in the conversion.
+ - `day`    -- interval in days
 
-3)  If there are multiple errors, the status value reflects only the
-    first, the smallest taking precedence.
+# Note
+
+1) The result is computed even if any of the range checks fail.
+
+2) Negative ihour, imin and/or sec produce a warning status, but the
+   absolute value is used in the conversion.
+
+3) If there are multiple errors, the status value reflects only the
+   first, the smallest taking precedence.
 """
 function tf2d(sign::Char, hour::Integer, minute::Integer, second::Float64)
     @assert 0   <= hour   <   24  "hour out of range [0-23]."
@@ -283,20 +309,24 @@ end
 #### Vector - Matrix / Build Rotations
 
 """
-    Rotate an r-matrix about the x-axis.
+    rx(ϕ::Float64, r::Matrix{Float64})
 
-# Arguments:
-- `ϕ::Float64`: angle (radians)
-- `r::Matrix{Float64}`: r-matrix
+Rotate an r-matrix about the x-axis.
 
-# Returns:
-- `r::Matrix{Float64}`: r-matrix, rotated
+# Input
 
-Notes:
+ - `ϕ`     -- angle (radians)
+ - `r`     -- r-matrix
 
-1) Calling this function with positive ϕ incorporates in the
-   supplied r-matrix r an additional rotation, about the x-axis,
-   anticlockwise as seen looking towards the origin from positive x.
+# Output
+
+ - `r`     -- r-matrix, rotated
+
+# Note
+
+1) Calling this function with positive ϕ incorporates in the supplied
+   r-matrix r an additional rotation, about the x-axis, anticlockwise
+   as seen looking towards the origin from positive x.
 
 2) The additional rotation can be represented by this matrix:
 
@@ -312,16 +342,20 @@ function rx(ϕ::Float64, r::Matrix{Float64})
 end
 
 """
-    Rotate an r-matrix about the y-axis.
+    ry(θ::Float64, r::Matrix{Float64})
 
-# Arguments:
-- `θ::Float64`: angle (radians)
-- `r::Matrix{Float64}`: r-matrix
+Rotate an r-matrix about the y-axis.
 
-# Returns:
-- `r::Matrix{Float64}`: r-matrix, rotated
+# Input
 
-Notes:
+ - `θ`     -- angle (radians)
+ - `r`     -- r-matrix
+
+# Output
+
+ - `r`     -- r-matrix, rotated
+
+# Note
 
 1) Calling this function with positive theta incorporates in the
    supplied r-matrix r an additional rotation, about the y-axis,
@@ -340,20 +374,24 @@ function ry(θ::Float64, r::Matrix{Float64})
 end
 
 """
-    Rotate an r-matrix about the z-axis.
+    rz(ψ::Float64, r::Matrix{Float64})
 
-# Arguments:
-- `ψ::Float64`: angle (radians)
-- `r::Matrix{Float64}`: r-matrix
+Rotate an r-matrix about the z-axis.
 
-# Returns:
-- `r::Matrix{Float64}`: r-matrix, rotated
+# Input
 
-Notes:
+ - `ψ`     -- angle (radians)
+ - `r `    -- r-matrix
 
-1) Calling this function with positive ψ incorporates in the
-   supplied r-matrix r an additional rotation, about the z-axis,
-   anticlockwise as seen looking towards the origin from positive z.
+# Output
+
+ - `r`     -- r-matrix, rotated
+
+# Note
+
+1) Calling this function with positive ψ incorporates in the supplied
+   r-matrix r an additional rotation, about the z-axis, anticlockwise
+   as seen looking towards the origin from positive z.
 
 2) The additional rotation can be represented by this matrix:
 
@@ -371,156 +409,203 @@ end
 #### Vector - Matrix / Copy, Extend, Extract
 
 """
-    Copy a p-vector.
+    cp(p::Vector{Float64})
 
-# Arguments:
-- `p::Vector{Float64}`: p-vector to be copied
+Copy a p-vector.
 
-# Returns:
-- `c::Vector{Float64}`: copy
+# Input
+
+ - `p`     -- p-vector to be copied
+
+# Output
+
+ - `c`     -- copy
 """
 cp(p::Vector{Float64}) = copy(p)
 
 """
-    Copy a position/velocity vector.
+    cpv(pv::Vector{Vector{Float64}})
 
-# Arguments:
-- `pv::Vector{Vector{Float64}}`: position/velocity vector to be copied
+Copy a position/velocity vector.
 
-# Returns:
-- `c::Vector{Vector{Float64}}`: copy
+# Input
+
+ - `pv`     -- pv-vector to be copied
+
+# Output
+
+ - `c`      -- copy
 """
 cpv(pv::Vector{Vector{Float64}}) = deepcopy(pv)
 
 """
-    Copy an r-matrix.
+    cr(r::Matrix{Float64})
 
-# Arguments:
-- `r::Matrix{Float64}`: r-matrix to be copied
+Copy an r-matrix.
 
-# Returns:
-- `c::Matrix{Float64}`: copy
+# Input
+
+ - `r`     -- r-matrix to be copied
+
+# Output
+
+ - `c`     -- copy
 """
 cr(r::Matrix{Float64}) = copy(r)
 
 """
-    Extend a p-vector to a pv-vector by appending a zero velocity.
+    p2pv(p::Vector{Float64})
 
-# Arguments:
-- `p::Vector{Float64}`: p-vector
+Extend a p-vector to a pv-vector by appending a zero velocity.
 
-# Returns:
-- `pv::Vector{Vector{Float64}}`: pv-vector
+# Input
+
+ - `p`     -- p-vector
+
+# Output
+
+ - `pv`    -- pv-vector
 """
 p2pv(p::Vector{Float64}) = [p, zeros(Float64, 3)]
 
 """
-    Discard velocity component of a pv-vector.
+    pv2p(pv::Vector{Vector{Float64}})
 
-# Arguments:
-- `pv::Vector{Vector{Float64}}`: pv-vector
+Discard velocity component of a pv-vector.
 
-# Returns:
-- `p::Vector{Float64}`: p-vector
+# Input
+
+ - `pv`    -- pv-vector
+
+# Output
+
+ - `p`     -- p-vector
 """
 pv2p(pv::Vector{Vector{Float64}}) = pv[1]
 
 #### Vector - Matrix / Initialization
 
 """
+    ir()
+
 Initialize an r-matrix to the identity matrix.
 
-# Returns:
-   r       Matrix{Float64}    r-matrix
+# Output
+
+ - `r`     -- r-matrix
 """
 ir() = I + zeros(Float64, 3, 3)
 
 """
+    zp()
+
 Zero a p-vector.
 
-# Returns:
-   p        Vector{Float64}      zero p-vector
+# Output
+ - `p`     -- zero p-vector
 """
 zp() = zeros(Float64, 3)
 
 """
+    zpv()
+
 Zero a pv-vector.
 
-# Returns:
-   pv       Vector{Vector{Float64}}      zero pv-vector
+# Output
+
+ - `pv`    -- zero pv-vector
 """
 zpv() = [zeros(Float64, 3), zeros(Float64, 3)]
 
 """
+    zr()
+
 Initialize an r-matrix to the null matrix.
 
-# Returns:
-   r        Matrix{Float64}    r-matrix
+# Output
+ - `r`     -- r-matrix
 """
 zr() = zeros(Float64, 3, 3)
 
 #### Vector - Matrix / Matrix Operations
 
 """
-    Multiply two r-matrices.
+    rxr(a::Matrix{Float64}, b::Matrix{Float64})
 
-# Arguments
-- `a::Matrix{Float64}`: first r-matrix
-- `b::Matrix{Float64}`: second r-matrix
+Multiply two r-matrices.
 
-# Returns:
-- `atb::Matrix{Float64}`: a * b
+# Input
 
-Note:
+ - `a`     -- first r-matrix
+ - `b`     -- second r-matrix
 
-   It is permissible to re-use the same array for any of the
+# Output
+
+ - `atb`   -- a * b
+
+# Note
+
+1) It is permissible to re-use the same array for any of the
    arguments.
 """
 rxr(a::Matrix{Float64}, b::Matrix{Float64}) = a*b
 
 """
-    Transpose an r-matrix.
+    tr(r::Matrix{Float64})
 
-# Arguments
-- `r::Matrix{Float64}`: r-matrix
+Transpose an r-matrix.
 
-# Returns:
-- `rt::Matrix{Float64}`: transpose
+# Input
 
-Note:
+ - `r`     -- r-matrix
 
-   It is permissible for r and rt to be the same array.
+# Output
+
+ - `rt`    -- transpose
+
+# Note
+
+1) It is permissible for r and rt to be the same array.
 """
 tr(r::Matrix{Float64}) = r'
 
 #### Vector - Matrix / Matrix-Vector Products
 
 """
-    Multiply a p-vector by an r-matrix.
+    rxp(r::Matrix{Float64}, p::Vector{Float64})
 
-# Arguments
-- `r::Matrix{Float64}`: r-matrix
-- `p::Vector{Float64}`: p-vector
+Multiply a p-vector by an r-matrix.
 
-# Returns:
-- `rp::Vector{Float64}`: r * p
+# Input
 
-Note:
-   It is permissible for p and rp to be the same array.
+ - `r`     -- r-matrix
+ - `p`     -- p-vector
+
+# Output
+
+ - `rp`    -- r * p
+
+# Note
+
+1) It is permissible for p and rp to be the same array.
 """
 rxp(r::Matrix{Float64}, p::Vector{Float64}) = r*p
 
 """
-    Multiply a pv-vector by an r-matrix.
+    rxpv(r::Matrix{Float64}, pv::Vector{Vector{Float64}})
 
-# Arguments
-- `r::Matrix{Float64}`: r-matrix
-- `pv::Vector{Vector{Float64}}`: pv-vector
+Multiply a pv-vector by an r-matrix.
 
-# Returns:
-- `rpv::Vector{Vector{Float64}}`: r * pv
+# Input
 
-Notes:
+ - `r`     -- r-matrix
+ - `pv`    -- pv-vector
+
+# Output
+
+ - `rpv`   -- r * pv
+
+# Note
 
 1) The algorithm is for the simple case where the r-matrix r is not a
    function of time.  The case where r is a function of time leads to
@@ -532,31 +617,40 @@ Notes:
 rxpv(r::Matrix{Float64}, pv::Vector{Vector{Float64}}) = [r*pv[1], r*pv[2]]
 
 """
-    Multiply a p-vector by the transpose of an r-matrix.
+    trxp(r::Matrix{Float64}, p::Vector{Float64})
 
-# Arguments
-- `r::Matrix{Float64}`: r-matrix
-- `p::Vector{Float64}`: p-vector
+Multiply a p-vector by the transpose of an r-matrix.
 
-# Returns:
-- `trp::Vector{Float64}`: r^T * p
+# Input
 
-Note:
-   It is permissible for p and trp to be the same array.
+ - `r`     -- r-matrix
+ - `p`     -- p-vector
+
+# Output
+
+ - `trp`   -- r^T * p
+
+# Note
+
+1) It is permissible for p and trp to be the same array.
 """
 trxp(r::Matrix{Float64}, p::Vector{Float64}) = r'*p
 
 """
-    Multiply a pv-vector by the transpose of an r-matrix.
+    trxpv(r::Matrix{Float64}, pv::Vector{Vector{Float64}})
 
-# Arguments
-- `r::Matrix{Float64}`: r-matrix
-- `pv::Vector{Vector{Float64}}`: pv-vector
+Multiply a pv-vector by the transpose of an r-matrix.
 
-# Returns:
-- `trpv::Vector{Vector{Float64}}`: r^T * pv
+# Input
 
-Notes:
+ - `r`     -- r-matrix
+ - `pv`    -- pv-vector
+
+# Output
+
+ - `trpv`  -- r^T * pv
+
+# Note
 
 1) The algorithm is for the simple case where the r-matrix r is not a
    function of time.  The case where r is a function of time leads to
@@ -570,15 +664,19 @@ trxpv(r::Matrix{Float64}, pv::Vector{Vector{Float64}}) = [r'*pv[1], r'*pv[2]]
 #### Vector - Matrix / Rotation Vectors
 
 """
-    Express an r-matrix as an r-vector.
+    rm2v(r::Matrix{Float64})
 
-# Arguments:
-- `r::Matrix{Float64}`: rotation matrix
+Express an r-matrix as an r-vector.
 
-# Returns:
-- `w::Vector{Float64}`: rotation vector (Note 1)
+# Input
 
-Notes:
+ - `r`     -- rotation matrix
+
+# Output
+
+ - `w`     -- rotation vector (Note 1)
+
+# Note
 
 1) A rotation matrix describes a rotation through some angle about
    some arbitrary axis called the Euler axis.  The "rotation vector"
@@ -600,15 +698,19 @@ function rm2v(r::Matrix{Float64})
 end
 
 """
-    Form the r-matrix corresponding to a given r-vector.
+    rv2m(w::Vector{Float64})
 
-# Arguments:
-- `w::Vector{Float64}`: rotation vector (Note 1)
+Form the r-matrix corresponding to a given r-vector.
 
-# Returns:
-- `r::Matrix{Float64}`: rotation matrix
+# Input
 
-Notes:
+ - `w`     -- rotation vector (Note 1)
+
+# Output
+
+ - `r`     -- rotation matrix
+
+# Note
 
 1) A rotation matrix describes a rotation through some angle about
    some arbitrary axis called the Euler axis.  The "rotation vector"
@@ -620,7 +722,6 @@ Notes:
 3) The reference frame rotates clockwise as seen looking along the
    rotation vector from the origin.
 """
-
 function rv2m(w::Vector{Float64})
     #  Euler angle (magnitude of rotation vector)
     ϕ = norm(w)
@@ -632,16 +733,20 @@ end
 #### Vector - Matrix / Separation and Angle
 
 """
-    Position-angle from two p-vectors.
+    pap(a::Vector{Float64}, b::Vector{Float64})
 
-# Arguments:
-- `a::Vector{Float64}`: direction of reference point
-- `b::Vector{Float64}`: direction of point whose PA is required
+Position-angle from two p-vectors.
 
-# Returns:
-- `θ::Float64`: position angle of b with respect to a (radians)
+# Input
 
-Notes:
+ - `a`     -- direction of reference point
+ - `b`     -- direction of point whose PA is required
+
+# Output
+
+ - `θ`     -- position angle of b with respect to a (radians)
+
+# Note
 
 1) The result is the position angle, in radians, of direction b with
    respect to direction a.  It is in the range -pi to +pi.  The sense
@@ -671,18 +776,22 @@ function pap(a::Vector{Float64}, b::Vector{Float64})
 end
 
 """
-    Position-angle from spherical coordinates.
+    pas(λa::Float64, ϕa::Float64, λb::Float64, ϕb::Float64)
 
-# Arguments:
-- `λa::Float64`: longitude of point A (e.g. RA) in radians
-- `ϕa::Float64`: latitude of point A (e.g. Dec) in radians
-- `λb::Float64`: longitude of point B
-- `ϕb::Float64`: latitude of point B
+Position-angle from spherical coordinates.
 
-# Returns:
-- `θ::Float64`: position angle of B with respect to A
+# Input
 
-Notes:
+ - `λa`    -- longitude of point A (e.g. RA) in radians
+ - `ϕa`    -- latitude of point A (e.g. Dec) in radians
+ - `λb`    -- longitude of point B
+ - `ϕb`    -- latitude of point B
+
+# Output
+
+ - `θ`     -- position angle of B with respect to A
+
+# Note
 
 1) The result is the bearing (position angle), in radians, of point B
    with respect to point A.  It is in the range -pi to +pi.  The sense
@@ -698,16 +807,20 @@ function pas(λa::Float64, ϕa::Float64, λb::Float64, ϕb::Float64)
 end
 
 """
-    Angular separation between two p-vectors.
+    sepp(a::Vector{Float64}, b::Vector{Float64})
 
-# Arguments:
-- `a::Vector{Float64}`: first p-vector (not necessarily unit length)
-- `b::Vector{Float64}`: second p-vector (not necessarily unit length)
+Angular separation between two p-vectors.
 
-# Returns:
-- `θ::Float64`: angular separation (radians, always positive)
+# Input
 
-Notes:
+ - `a`     -- first p-vector (not necessarily unit length)
+ - `b`     -- second p-vector (not necessarily unit length)
+
+# Output
+
+ - `θ`     -- angular separation (radians, always positive)
+
+# Note
 
 1) If either vector is null, a zero result is returned.
 
@@ -724,16 +837,20 @@ function sepp(a::Vector{Float64}, b::Vector{Float64})
 end
 
 """
-    Angular separation between two sets of spherical coordinates.
+    seps(λa::Float64, ϕa::Float64, λb::Float64, ϕb::Float64)
 
-# Arguments:
-- `λa::Float64`: first longitude (radians)
-- `ϕa::Float64`: first latitude (radians)
-- `λb::Float64`: second longitude (radians)
-- `ϕb::Float64`: second latitude (radians)
+Angular separation between two sets of spherical coordinates.
 
-# Returns:
-- `θ::Float64`: angular separation (radians)
+# Input
+
+ - `λa`     -- first longitude (radians)
+ - `ϕa`     -- first latitude (radians)
+ - `λb`     -- second longitude (radians)
+ - `ϕb`     -- second latitude (radians)
+
+# Output
+
+ - `θ`      -- angular separation (radians)
 
 """
 function seps(λa::Float64, ϕa::Float64, λb::Float64, ϕb::Float64)
@@ -753,16 +870,20 @@ end
 #### Vector - Matrix / Spherical-Cartesian
 
 """
-    P-vector to spherical coordinates.
+    c2s(pos::Vector{Float64})
 
-# Arguments:
-- `p::Vector{Float64}`: p-vector
+P-vector to spherical coordinates.
 
-# Returns:
-- `θ::Float64`: longitude angle (radians)
-- `ϕ::Float64`: latitude angle (radians)
+# Input
 
-Notes:
+ - `p`     -- p-vector
+
+# Output
+
+ - `θ`     -- longitude angle (radians)
+ - `ϕ`     -- latitude angle (radians)
+
+# Note
 
 1) The vector p can have any magnitude; only its direction is used.
 
@@ -772,47 +893,54 @@ Notes:
 """
 function c2s(pos::Vector{Float64})
     NamedTuple{(:θ, :ϕ)}
-    ((sum(pos[1:2].^2) == 0 ? 0 : atan(pos[2], pos[1]),
-      pos[3] == 0 ? 0 : atan(pos[3], norm(pos[1:2]))))
+    ((sum(pos[1:2].^2) == 0. ? 0. : atan(pos[2], pos[1]),
+      pos[3] == 0. ? 0. : atan(pos[3], norm(pos[1:2]))))
 end
 
 """
-    P-vector to spherical polar coordinates.
+    p2s(pos::Vector{Float64})
 
-# Arguments:
-- `p::Vector{Float64}`: p-vector
+P-vector to spherical polar coordinates.
 
-# Returns:
-- `θ::Float64`: longitude angle (radians)
-- `ϕ::Float64`: latitude angle (radians)
-- `r::Float64`: radial distance
+# Input
 
-Notes:
+ - `p`     -- p-vector
+
+# Output
+
+ - `θ`     -- longitude angle (radians)
+ - `ϕ`     -- latitude angle (radians)
+ - `r`     -- radial distance
+
+# Note
 
 1) If P is null, zero θ, ϕ and r are returned.
 
 2) At either pole, zero θ is returned.
-
 """
 function p2s(pos::Vector{Float64})
     @inline NamedTuple{(:θ, :ϕ, :r)}((c2s(pos)..., norm(pos)))
 end
 
 """
-    Convert position/velocity from Cartesian to spherical coordinates.
+    pv2s(pv::Vector{Vector{Float64}})
 
-# Arguments:
-- `posvel::Vector{Vector{Float64}}`: position-velocity-vector
+Convert position/velocity from Cartesian to spherical coordinates.
 
-# Returns:
-- `θ::Float64`: longitude angle (radians)
-- `ϕ::Float64`: latitude angle (radians)
-- `r::Float64`: radial distance
-- `dθ::Float64`: rate of change of θ
-- `dϕ::Float64`: rate of change of ϕ
-- `dr::Float64`: rate of change of r
+# Input
 
-Notes:
+ - `posvel` -- position-velocity-vector
+
+# Output
+
+ - `θ`     -- longitude angle (radians)
+ - `ϕ`     -- latitude angle (radians)
+ - `r`     -- radial distance
+ - `dθ`    -- rate of change of θ
+ - `dϕ`    -- rate of change of ϕ
+ - `dr`    -- rate of change of r
+
+# Note
 
 1) If the position part of pv is null, theta, ϕ, td and pd are
    indeterminate.  This is handled by extrapolating the position
@@ -826,32 +954,36 @@ Notes:
 """
 function pv2s(pv::Vector{Vector{Float64}})
     
-    x,  y,  z  = pv[(sum(pv[1].^2) == 0) ? 2 : 1]
+    x,  y,  z  = pv[norm(pv[1]) == 0.0 ? 2 : 1]
     dx, dy, dz = pv[2]
 
-    if sum(pv[1][1:2].^2) != 0
+    if norm([x, y]) != 0.0
         θ  = atan(y, x)
         ϕ  = atan(z, norm([x, y]))
         dθ = (x*dy - y*dx) / (x*x+y*y)
         dϕ = (dz*(x*x+y*y) - z*(x*dx+y*dy)) / (sum([x, y, z].^2)*norm([x, y]))
     else
-        θ,  ϕ  = 0, (z != 0) ? atan(z, norm([x, y])) : 0
-        dθ, dϕ = 0, 0
+        θ,  ϕ  = 0.0, (z != 0.0) ? atan(z, norm([x, y])) : 0.0
+        dθ, dϕ = 0.0, 0.0
     end
     r  = norm(pv[1])
-    dr = norm([x, y, z]) != 0 ? (x*dx+y*dy+z*dz)/norm([x, y, z]) : 0
+    dr = norm([x, y, z]) != 0.0 ? (x*dx+y*dy+z*dz)/norm([x, y, z]) : 0.0
     NamedTuple{(:θ, :ϕ, :r, :dθ, :dϕ, :dr)}((θ, ϕ, r, dθ, dϕ, dr))
 end
 
 """
-    Convert spherical coordinates to Cartesian.
+    s2c(θ::Float64, ϕ::Float64)
 
-# Arguments:
-- `θ::Float64`: longitude angle (radians)
-- `ϕ::Float64`: latitude angle (radians)
+Convert spherical coordinates to Cartesian.
 
-# Returns:
-- `c::Vector{Float64}`: direction cosines
+# Input
+
+ - `θ`     -- longitude angle (radians)
+ - `ϕ`     -- latitude angle (radians)
+
+# Output
+
+ - `c`     -- direction cosines
 
 """
 function s2c(θ::Float64, ϕ::Float64)
@@ -859,31 +991,40 @@ function s2c(θ::Float64, ϕ::Float64)
 end
 
 """
-    Convert spherical polar coordinates to p-vector.
+    s2p(θ::Float64, ϕ::Float64, r::Float64)
 
-# Arguments:
-- `θ::Float64`: longitude angle (radians)
-- `ϕ::Float64`: latitude angle (radians)
-- `r::Float64`: radial distance
+Convert spherical polar coordinates to p-vector.
 
-# Returns:
-- `p::Vector{Float64}`: Cartesian coordinates
+# Input
+
+ - `θ`     -- longitude angle (radians)
+ - `ϕ`     -- latitude angle (radians)
+ - `r`     -- radial distance
+
+# Output
+
+ - `p`     -- Cartesian coordinates
 """
 s2p(θ::Float64, ϕ::Float64, r::Float64) = r*s2c(θ, ϕ)
 
 """
-    Convert position/velocity from spherical to Cartesian coordinates.
+    s2pv(θ::Float64, ϕ::Float64, r::Float64, dθ::Float64, dϕ::Float64,
+         dr::Float64)
 
-# Arguments:
-- `θ::Float64`: longitude angle (radians)
-- `ϕ::Float64`: latitude angle (radians)
-- `r::Float64`: radial distance
-- `dθ::Float64`: rate of change of θ
-- `dϕ::Float64`: rate of change of ϕ
-- `dr::Float64`: rate of change of r
+Convert position/velocity from spherical to Cartesian coordinates.
 
-# Returns:
-- `pv::Vector{Vector{Float64}}`: pv-vector
+# Input
+
+ - `θ`     -- longitude angle (radians)
+ - `ϕ`     -- latitude angle (radians)
+ - `r`     -- radial distance
+ - `dθ`    -- rate of change of θ
+ - `dϕ`    -- rate of change of ϕ
+ - `dr`    -- rate of change of r
+
+# Output
+
+ - `pv`    -- pv-vector
 """
 function s2pv(θ::Float64, ϕ::Float64, r::Float64,
               dθ::Float64, dϕ::Float64, dr::Float64)
@@ -896,51 +1037,67 @@ end
 #### Vector - Matrix / Vector Operations
 
 """
-    P-vector inner (=scalar=dot) product.
+    pdp(a::Vector{Float64}, b::Vector{Float64})
 
-# Arguments:
-- `a::Vector{Float64}`: first p-vector
-- `b::Vector{Float64}`: second p-vector
+P-vector inner (=scalar=dot) product.
 
-# Returns:
-- `r::Float64        a . b
+# Input
+
+ - `a`     -- first p-vector
+ - `b`     -- second p-vector
+
+# Output
+
+ - `r`     -- a . b
 """
 pdp(a::Vector{Float64}, b::Vector{Float64}) = sum(a.*b)
 
 """
-    Modulus of p-vector.
+    pm(p::Vector{Float64}) = norm(p)
 
-# Arguments:
-- `p::Vector{Float64}`: p-vector
+Modulus of p-vector.
 
-# Returns:
-- `r::Float64`: modulus
+# Input
+
+ - `p`     -- p-vector
+
+# Output
+
+ - `r`     -- modulus
 """
 pm(p::Vector{Float64}) = norm(p)
 
 """
-    P-vector subtraction.
+    pmp(a::Vector{Float64}, b::Vector{Float64})
 
-# Arguments:
-- `a::Vector{Float64}`: first p-vector
-- `b::Vector{Float64}`: second p-vector
+P-vector subtraction.
 
-# Returns:
-- `amb::Vector{Float64}`: a - b
+# Input
+
+ - `a`     -- first p-vector
+ - `b`     -- second p-vector
+
+# Output
+
+ - `amb`   -- a - b
 """
 pmp(a::Vector{Float64}, b::Vector{Float64}) = a .- b
 
 """
-    Convert a p-vector into modulus and unit vector.
+    pn(p::Vector{Float64})
 
-# Arguments:
-- `p::Vector{Float64}`: p-vector
+Convert a p-vector into modulus and unit vector.
 
-# Returns:
-- `r::Float64`: modulus
-- `u::Vector{Float64}`: unit vector
+# Input
 
-Notes:
+ - `p`     -- p-vector
+
+# Output
+
+ - `r`     -- modulus
+ - `u`     -- unit vector
+
+# Note
 
 1) If p is null, the result is null.  Otherwise the result is a unit
    vector.
@@ -951,43 +1108,55 @@ function pn(p::Vector{Float64})
 end
 
 """
-    P-vector addition.
+    ppp(a::Vector{Float64}, b::Vector{Float64})
 
-# Arguments:
-- `a::Vector{Float64}`: first p-vector
-- `b::Vector{Float64}`: second p-vector
+P-vector addition.
 
-# Returns:
-- `apb::Vector{Float64}`: a + b
+# Input
+
+ - `a`     -- first p-vector
+ - `b`     -- second p-vector
+
+# Output
+
+ - `apb`   -- a + b
 """
 ppp(a::Vector{Float64}, b::Vector{Float64}) = a.+b
 
 """
-    P-vector plus scaled p-vector.
+    ppsp(a::Vector{Float64}, s::Float64, b::Vector{Float64})
 
-# Arguments:
-- `a::Vector{Float64}`: first p-vector
-- `s::Float64`: scalar (multiplier for b)
-- `b::Vector{Float64}`: second p-vector
+P-vector plus scaled p-vector.
 
-# Returns:
-- `apsb::Vector{Vector{Float64}}`: a + s*b
+# Input
+
+ - `a`     -- first p-vector
+ - `s`     -- scalar (multiplier for b)
+ - `b`     -- second p-vector
+
+# Output
+
+ - `apsb`  -- a + s*b
 """
 ppsp(a::Vector{Float64}, s::Float64, b::Vector{Float64}) = a + s*b
 
 """
-    Inner (=scalar=dot) product of two pv-vectors.
+    pvdpv(a::Vector{Vector{Float64}}, b::Vector{Vector{Float64}})
 
-# Arguments:
-- `a::Matrix{Float64}`: first pv-vector
-- `b::Matrix{Float64}`: second pv-vector
+Inner (=scalar=dot) product of two pv-vectors.
 
-# Returns:
-- `adb::Vector{Float64}`: a . b (see note)
+# Input
 
-Note:
+ - `a`     -- first pv-vector
+ - `b`     -- second pv-vector
 
-   If the position and velocity components of the two pv-vectors are (
+# Output
+
+ - `adb`   -- a . b (see note)
+
+# Note
+
+1) If the position and velocity components of the two pv-vectors are (
    ap, av ) and ( bp, bv ), the result, a . b, is the pair of numbers
    ( ap . bp , ap . bv + av . bp ).  The two numbers are the
    dot-product of the two p-vectors and its derivative.
@@ -997,52 +1166,68 @@ function pvdpv(a::Vector{Vector{Float64}}, b::Vector{Vector{Float64}})
 end
 
 """
-    Modulus of pv-vector.
+    pvm(pv::Vector{Vector{Float64}})
 
-# Arguments:
-- `pv::Vector{Vector{Float64}}`: pv-vector
+Modulus of pv-vector.
 
-# Returns:
-- `r::Float64`: modulus of position component
-- `s::Float64`: modulus of velocity component
+# Input
+
+ - `pv`    -- pv-vector
+
+# Output
+
+ - `r`     -- modulus of position component
+ - `s`     -- modulus of velocity component
 """
 pvm(pv::Vector{Vector{Float64}}) = sqrt.(sum.([pv[1].^2, pv[2].^2]))
 
 """
-    Subtract one pv-vector from another.
+    pvmpv(a::Vector{Vector{Float64}}, b::Vector{Vector{Float64}})
 
-# Arguments:
-- `a::Vector{Vector{Float64}}`: first pv-vector
-- `b::Vector{Vector{Float64}}`: second pv-vector
+Subtract one pv-vector from another.
 
-# Returns:
-- `amb::Vector{Vector{Float64}}`: a - b
+# Input
+
+ - `a`     -- first pv-vector
+ - `b`     -- second pv-vector
+
+# Output
+
+ - `amb`   -- a - b
 """
 pvmpv(a::Vector{Vector{Float64}}, b::Vector{Vector{Float64}}) = [a[1] .- b[1], a[2] .- b[2]]
 
 """
-    Add one pv-vector to another.
+    pvppv(a::Vector{Vector{Float64}}, b::Vector{Vector{Float64}})
 
-# Arguments:
-- `a::Vector{Vector{Float64}}`: first pv-vector
-- `b::Vector{Vector{Float64}}`: second pv-vector
+Add one pv-vector to another.
 
-# Returns:
-- `apb::Vector{Vector{Float64}}`: a + b
+# Input
+
+ - `a`     -- first pv-vector
+ - `b`     -- second pv-vector
+
+# Output
+
+ - `apb`   -- a + b
 """
 pvppv(a::Vector{Vector{Float64}}, b::Vector{Vector{Float64}}) = [a[1] .+ b[1], a[2] .+ b[2]]
 
 """
-    Update a pv-vector.
+    pvu(dt::Float64, pv::Vector{Vector{Float64}})
 
-# Arguments:
-- `dt::Float64`: time interval
-- `pv::Vector{Vector{Float64}}`: pv-vector
+Update a pv-vector.
 
-# Returns:
-- `upv::Vector{Vector{Float64}}`: p updated, v unchanged
+# Input
 
-Notes:
+ - `dt`    -- time interval
+ - `pv`    -- pv-vector
+
+# Output
+
+ - `upv`   -- p updated, v unchanged
+
+# Note
 
 1) "Update" means "refer the position component of the vector to a new
    date dt time units from the existing date".
@@ -1052,16 +1237,20 @@ Notes:
 pvu(dt::Float64, pv::Vector{Vector{Float64}}) = [pv[1] .+ dt.*pv[2], pv[2]]
 
 """
-    Update a pv-vector, discarding the velocity component.
+    pvup(dt::Float64, pv::Vector{Vector{Float64}})
 
-# Arguments:
-- `dt::Float64`: time interval
-- `pv::Vector{Vector{Float64}}`: pv-vector
+Update a pv-vector, discarding the velocity component.
 
-# Returns:
-- `p::Vector{Float64}`: p-vector
+# Input
 
-Notes:
+ - `dt`    -- time interval
+ - `pv`    -- pv-vector
+
+# Output
+
+ - `p`     -- p-vector
+
+# Note
 
 1) "Update" means "refer the position component of the vector to a new
    date dt time units from the existing date".
@@ -1071,16 +1260,20 @@ Notes:
 pvup(dt::Float64, pv::Vector{Vector{Float64}}) = pv[1] .+ dt*pv[2]
 
 """
-    Outer (=vector=cross) product of two pv-vectors.
+    pvxpv(a::Vector{Vector{Float64}}, b::Vector{Vector{Float64}})
 
-# Arguments:
-- `a::Vector{Vector{Float64}}`: first pv-vector
-- `b::Vector{Vector{Float64}}`: second pv-vector
+Outer (=vector=cross) product of two pv-vectors.
 
-# Returns:
-- `axb::Matrix{Float64`: a x b
+# Input
 
-Notes:
+ - `a`     -- first pv-vector
+ - `b`     -- second pv-vector
+
+# Output
+
+ - `axb`   -- a x b
+
+# Note
 
 1) If the position and velocity components of the two pv-vectors are (
    ap, av ) and ( bp, bv ), the result, a x b, is the pair of vectors
@@ -1092,50 +1285,66 @@ function pvxpv(a::Vector{Vector{Float64}}, b::Vector{Vector{Float64}})
 end
 
 """
-    P-vector outer (=vector=cross) product.
+    pxp(a::Vector{Float64}, b::Vector{Float64})
 
-# Arguments:
-- `a::Vector{Float64}`: first p-vector
-- `b::Vector{Float64}`: second p-vector
+P-vector outer (=vector=cross) product.
 
-# Returns:
-- `axb::Vector{Float64}`: a x b
+# Input
+
+ - `a`     -- first p-vector
+ - `b`     -- second p-vector
+
+# Output
+
+ - `axb`   -- a x b
 """
 pxp(a::Vector{Float64}, b::Vector{Float64}) = vec2mat(a)*b
 
 """
-    Multiply a pv-vector by two scalars.
+    s2xpv(s1::Float64, s2::Float64, pv::Vector{Vector{Float64}})
 
-# Arguments:
-- `s1::Float64`: scalar to multiply position component by
-- `s2::Float64`: scalar to multiply velocity component by
-- `pv::Vector{Vector{Float64}}`: pv-vector
+Multiply a pv-vector by two scalars.
 
-# Returns:
-- `spv::Vector{Vector{Float64}}`: pv-vector: p scaled by s1, v scaled by s2
+# Input
+
+ - `s1`    -- scalar to multiply position component by
+ - `s2`    -- scalar to multiply velocity component by
+ - `pv`    -- pv-vector
+
+# Output
+
+ - `spv`   -- pv-vector: p scaled by s1, v scaled by s2
 """
 s2xpv(s1::Float64, s2::Float64, pv::Vector{Vector{Float64}}) = [s1*pv[1], s2*pv[2]]
 
 """
-    Multiply a p-vector by a scalar.
+    sxp(s::Float64, p::Vector{Float64})
 
-# Arguments:
-- `s::Float64`: scalar
-- `p::Vector{Float64}`: p-vector
+Multiply a p-vector by a scalar.
 
-# Returns:
-- `sp::Vector{Float64}`: s * p
+# Input
+
+ - `s`     -- scalar
+ - `p`     -- p-vector
+
+# Output
+
+ - `sp`    -- s * p
 """
 sxp(s::Float64, p::Vector{Float64}) = s*p
 
 """
-    Multiply a pv-vector by a scalar.
+    sxpv(s::Float64, pv::Vector{Vector{Float64}})
 
-# Arguments:
-- `s::Float64`: scalar
-- `pv::Vector{Vector{Float64}}`: pv-vector
+Multiply a pv-vector by a scalar.
 
-# Returns:
-- `spv::Vector{Vector{Float64}}`: s * pv
+# Input
+
+ - `s`     -- scalar
+ - `pv`    -- pv-vector
+
+# Output
+
+ - `spv`   -- s * pv
 """
 sxpv(s::Float64, pv::Vector{Vector{Float64}}) = [s*pv[1], s*pv[2]]
