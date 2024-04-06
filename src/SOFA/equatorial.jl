@@ -122,8 +122,7 @@ function hd2ae(HA::Float64, Dec::Float64, ϕ::Float64)
 
     x, y, z = -ch*cd*sp + sd*cp, -sh*cd, ch*cd*cp + sd*sp
     r = sqrt(x*x + y*y)
-    NamedTuple{(:azimuth, :altitude)}((mod2pi(r != 0.0 ? atan(y, x) : 0.0),
-                                       atan(z, r)))
+    (azi = mod2pi(r != 0.0 ? atan(y, x) : 0.0), alt = atan(z, r))
 end
 
 """

@@ -34,7 +34,7 @@ Seidelmann (ed), University Science Books (1992), Section 12.92
 (p604).
 """
 function cal2jd(year::Integer, month::Integer, day::Integer)
-    NamedTuple{(:mjd0, :mjd)}((MJDAY0, calendar2MJD(year, month, day)))
+    (mjd0 = MJDAY0, mjd = calendar2MJD(year, month, day))
 end
 
 """
@@ -91,7 +91,7 @@ available as a single number by adding MJD0 and MJD.
 Lieske, J.H., 1979, Astron.Astrophys. 73, 282.
 """
 function epb2jd(epoch::Real)
-    NamedTuple{(:mjd0, :mjd)}((MJDAY0, 15019.81352 + (epoch - 1900.0) * DAYINYEAR1900))
+    (mjd0 = MJDAY0, mjd = 15019.81352 + (epoch - 1900.0) * DAYINYEAR1900)
 end
 
 """
@@ -148,7 +148,7 @@ available as a single number by adding MJD0 and MJD.
 Lieske, J.H., 1979, Astron.Astrophys. 73, 282.
 """
 function epj2jd(epoch::Real)
-    NamedTuple{(:mjd0, :mjd)}((MJDAY0, MODJULDAY0 + (epoch - 2000.0) * DAYINYEAR2000))
+    (mjd0 = MJDAY0, mjd = MODJULDAY0 + (epoch - 2000.0) * DAYINYEAR2000)
 end
 
 """
@@ -259,7 +259,7 @@ function jd2cal(day1::Real, day2::Real)
     month::Integer = kk + 2 - 12*ll
     year::Integer = 100 * (nn - 49) + ii + ll
 
-    NamedTuple{(:year, :month, :day, :fraction)}((year, month, day, frac))
+    (year = year, month = month, day = day, fraction = frac)
 end
 
 """
@@ -333,5 +333,5 @@ function jdcalf(ndp::Integer, day1::Real, day2::Real)
     year::Integer, month::Integer, day::Integer, fraction::Float64 = jd2cal(djd, rf)
     # fraction = round(ff * denom)::Integer
 
-    NamedTuple{(:year, :month, :day, :fraction)}((year, month, day, convert(Integer, round(ff * denom))))
+    (year = year, month = month, day = day, fraction = convert(Integer, round(ff * denom)))
 end

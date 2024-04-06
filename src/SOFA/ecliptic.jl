@@ -160,7 +160,7 @@ precession model.
 """
 function eqec06(day1::Float64, day2::Float64, ras::Float64, dec::Float64)
     @inline lon, lat = c2s(ecm06(day1, day2)*s2c(ras, dec))
-    NamedTuple{(:lon, :lat)}((anp(lon), anpm(lat)))
+    (lon = anp(lon), lat = anpm(lat))
 end
 
 """
@@ -209,7 +209,7 @@ Astron.Astrophys. 541, C1
 """
 function lteceq(epoch::Float64, lon::Float64, lat::Float64)
     @inline ras, dec = c2s(ltecm(epoch)'*s2c(lon, lat))
-    NamedTuple{(:ras, :dec)}((anp(ras), anpm(dec)))
+    (RA = anp(ras), Dec = anpm(dec))
 end
 
 """
@@ -319,5 +319,5 @@ Astron.Astrophys. 541, C1
 """
 function lteqec(epoch::Float64, ras::Float64, dec::Float64)
     @inline lon, lat = c2s(ltecm(epoch)*s2c(ras, dec))
-    NamedTuple{(:lon, :lat)}((anp(lon), anpm(lat)))
+    (lon = anp(lon), lat = anpm(lat))
 end

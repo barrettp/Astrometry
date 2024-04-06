@@ -120,35 +120,38 @@ function bp00(day1::Float64, day2::Float64)
     rb = Rx(-δϵ)Ry(δψ*sin(deg2rad(ϵ0_2000/3600)))Rz(δra)
     rp = Rz(χA)Rx(-ωA)Rz(-ψA)Rx(deg2rad(ϵ0_2000/3600))
     #  Bias-precession matrix: GCRS to mean of date.
-    NamedTuple{(:rb, :rp, :rbp)}((rb, rp, rp*rb))
+    (rb = rb, rp = rp, rbp = rp*rb)
 end
 
 """
     bp06(day1::Float64, day2::Float64)
 
-This function forms three Euler angles which implement general
-precession from epoch J2000.0, using the IAU 2006 model.  Frame bias
-(the offset between ICRS and mean J2000.0) is included.
+Frame bias and precession, IAU 2006.
+
+This function is part of the International Astronomical Union's SOFA
+(Standards of Fundamental Astronomy) software collection.
+
+Status:  support function.
 
 # Input
 
  - `day1`  -- TT as Julian Date (Note 1)
- - `day2`  -- ... Julian Date (Note 1)
+ - `day2`  -- ... Julian Date
 
 # Output
 
- - `bzeta`  -- 1st rotation: radians cw around z
- - `bz`     -- 3rd rotation: radians cw around z
- - `btheta` -- 2nd rotation: radians ccw around y
+ - `rb`    -- frame bias matrix (Note 2)
+ - `rp`    -- precession matrix (Note 3)
+ - `rbp`   -- bias-precession matrix (Note 4)
 
-# Note
+# Notes
 
 1) The TT date date1+date2 is a Julian Date, apportioned in any
    convenient way between the two arguments.  For example,
    JD(TT)=2450123.7 could be expressed in any of these ways, among
    others:
 
-          date1          date2
+           date1         date2
 
        2450123.7           0.0       (JD method)
        2451545.0       -1421.3       (J2000 method)
@@ -162,36 +165,31 @@ precession from epoch J2000.0, using the IAU 2006 model.  Frame bias
    resolution.  The MJD method and the date & time methods are both
    good compromises between resolution and convenience.
 
-2) The traditional accumulated precession angles zeta_A, z_A, theta_A
-   cannot be obtained in the usual way, namely through polynomial
-   expressions, because of the frame bias.  The latter means that two
-   of the angles undergo rapid changes near this date.  They are
-   instead the results of decomposing the precession-bias matrix
-   obtained by using the Fukushima-Williams method, which does not
-   suffer from the problem.  The decomposition returns values which
-   can be used in the conventional formulation and which include frame
-   bias.
+2) The matrix rb transforms vectors from GCRS to mean J2000.0 by
+   applying frame bias.
 
-3) The three angles are returned in the conventional order, which is
-   not the same as the order of the corresponding Euler rotations.
-   The precession-bias matrix is R_3(-z) x R_2(+theta) x R_3(-zeta).
+3) The matrix rp transforms vectors from mean J2000.0 to mean of date
+   by applying precession.
 
-4) Should zeta_A, z_A, theta_A angles be required that do not contain
-   frame bias, they are available by calling the ERFA function
-   eraP06e.
+4) The matrix rbp transforms vectors from GCRS to mean of date by
+   applying frame bias then precession.  It is the product rp x rb.
+
+5) It is permissible to re-use the same array in the returned
+   arguments.  The arrays are filled in the order given.
+
+# References
+
+Capitaine, N. & Wallace, P.T., 2006, Astron.Astrophys. 450, 855
+
+Wallace, P.T. & Capitaine, N., 2006, Astron.Astrophys. 459, 981
 """
 function bp06(day1::Float64, day2::Float64)
-    #  Precession matrix via Fukushima-Williams angles
-    r = pmat06(day1, day2)
-    #  Solve for z, choosing the ±π alternative
-    x, y = -r[1,3] < 0.0 ? (r[1,3], -r[2,3]) : (-r[1,3], r[2,3])
-    bz = x != 0.0 || y != 0.0 ? -atan(y, x) : 0.0
-    #  Derotate it out of the matrix
-    r = Rz(bz)*r
-    #  Solve for the remaining two angles.
-    bζ = r[2,2] != 0.0 || -r[2,1] != 0.0 ? -atan(-r[2,1], r[2,2]) : 0.0
-    bθ = r[3,3] != 0.0 || r[1,3] != 0.0 ? -atan(r[1,3], r[3,3]) : 0.0
-    NamedTuple{(:ζ, :z, :θ)}((bζ, bz, bθ))
+    #  B matrix
+    rb = fw2m(pfw06(MJD0, MJD00)...)
+    #  PxB matrix
+    rbp = pmat06(day1, day2)
+    #  P matrix
+    (rb = rb, rp = rbp*rb', rbp = rbp)
 end
 
 """
@@ -603,8 +601,9 @@ McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
 Technical Note No. 32, BKG (2004)
 """
 function c2ixys(x::Float64, y::Float64, s::Float64)
-    e = (x*x + y*y) > 0.0 ? atan(y, x) : 0.0
-    Rz(-(e+s))Ry(atan(sqrt((x*x + y*y)/(1.0 - (x*x + y*y)))))Rz(e)
+    r = x*x + y*y
+    e = r > 0.0 ? atan(y, x) : 0.0
+    Rz(-(e+s))Ry(atan(sqrt(r/(1.0 - r))))Rz(e)
 end
 
 """
@@ -777,7 +776,7 @@ the polar motion, using the IAU 2006/2000A precession-nutation model.
 # Note
 
 1) The TT and UT1 dates tta+ttb and uta+utb are Julian Dates,
-   apportioned in any convenient way between the arguments uta and
+   apportioned in any convenient way between the two arguments uta and
    utb.  For example, JD(UT1)=2450123.7 could be expressed in any of
    these ways, among others:
 
@@ -1854,7 +1853,7 @@ function nut00a(day1::Float64, day2::Float64)
         (sum(pa[:,1].*sin.(ϕp) .+ pa[:,2].*cos.(ϕp)),
          sum(pa[:,3].*sin.(ϕp) .+ pa[:,4].*cos.(ϕp)))./3.6e10)
 
-    NamedTuple{(:ψ, :ϵ)}((δψl + δψp, δϵl + δϵp))
+    (ψ = δψl + δψp, ϵ = δϵl + δϵp)
 end
 
 """
@@ -2004,7 +2003,7 @@ function nut00b(day1::Float64, day2::Float64)
     #  Fixed offset to correct for missing terms in truncated series
     δψp, δϵp = deg2rad.((ψ_2000B_planet, ϵ_2000B_planet)./3.6e6)
 
-    NamedTuple{(:ψ, :ϵ)}((δψl + δψp, δϵl + δϵp))
+    (ψ = δψl + δψp, ϵ = δϵl + δϵp)
 end
 
 """
@@ -2083,8 +2082,8 @@ function nut06a(day1::Float64, day2::Float64)
     #  Obtain IAU 2000A nutation
     #  Factor correcting for secular variation of J2.
     #  Apply P03 adjustments (Wallace & Capitaine, 2006, Eqs. 5)
-    NamedTuple{(:ψ, :ϵ)}(values(nut00a(day1, day2)) .* 
-                         ((1.0 + j2_corr_2000*Δt) .+ (p03_2000, 0.0)))
+    ψ, ϵ = values(nut00a(day1, day2)) .* ((1.0 + j2_corr_2000*Δt) .+ (p03_2000, 0.0))
+    (ψ = ψ, ϵ = ϵ)
 end
 
 """
@@ -2161,7 +2160,7 @@ function nut80(day1::Float64, day2::Float64)
     δψl, δϵl = deg2rad.((sum((la[:,1] .+ la[:,2].*Δt).*sin.(ϕl)),
                          sum((la[:,3] .+ la[:,4].*Δt).*cos.(ϕl)))./3.6e7)
 
-    NamedTuple{(:ψ, :ϵ)}((δψl, δϵl))
+    (ψ = δψl, ϵ = δϵl)
 end
 
 """
@@ -2448,9 +2447,9 @@ precession from epoch J2000.0, using the IAU 2006 model.  Frame bias
 
 # Output
 
- - `bzeta`  -- 1st rotation: radians cw around z
- - `bz`     -- 3rd rotation: radians cw around z
- - `btheta` -- 2nd rotation: radians ccw around y
+ - `ζ`    -- 1st rotation: radians cw around z
+ - `θ`    -- 2nd rotation: radians ccw around y
+ - `z`    -- 3rd rotation: radians cw around z
 
 # Note
 
@@ -2493,15 +2492,15 @@ precession from epoch J2000.0, using the IAU 2006 model.  Frame bias
 """
 function pb06(day1::Float64, day2::Float64)
     #  Precesion matrix via Fukushima-Williams angles
-    bpn = pmat06(day1, day2)
+    r = pmat06(day1, day2)
     #  Solve for z, choosing the ±π alternative.
-    x, y = -bpn[1,3] < 0.0 ? (bpn[1,3], -bpn[2,3]) : (-bpn[1,3], bpn[2,3])
+    x, y = -r[1,3] < 0.0 ? (r[1,3], -r[2,3]) : (-r[1,3], r[2,3])
     z = (x != 0.0 || y != 0.0) ? -atan(y, x) : 0.0
     #  De-rotate z out of the matrix
-    bpn = Rz(z)*bpn
-    θ = (bpn[3,3] != 0.0 || bpn[1,3] != 0.0) ? -atan(bpn[1,3], bpn[3,3]) : 0.0
-    ζ = (bpn[2,2] != 0.0 || -bpn[2,1] != 0.0) ? -atan(-bpn[2,1], bpn[2,2]) : 0.0
-    NamedTuple{(:ζ, :θ, :z)}((ζ, θ, z))
+    r = Rz(z)*r
+    ζ = r[2,2] != 0.0 || -r[2,1] != 0.0 ? -atan(-r[2,1], r[2,2]) : 0.0
+    θ = r[3,3] != 0.0 || r[1,3] != 0.0 ? -atan(r[1,3], r[3,3]) : 0.0
+    (ζ = ζ, θ = θ, z = z)
 end
 
 """
@@ -2847,7 +2846,7 @@ function pn00(day1::Float64, day2::Float64, ψ::Float64, ϵ::Float64)
     #  Nutation matrix
     rn = numat(ϵA, ψ, ϵ)
     #  Bias-precession-nutation matrix (classical)
-    NamedTuple{(:ϵA, :rb, :rp, :rbp, :rn, :rbpn)}((ϵA, rb, rp, rbp, rn, rn*rbp))
+    (ϵA = ϵA, rb = rb, rp = rp, rbp = rbp, rn = rn, rbpn = rn*rbp)
 end
 
 """
@@ -2939,7 +2938,7 @@ n.b. The celestial ephemeris origin (CEO) was renamed "celestial
 function pn00a(day1::Float64, day2::Float64)
     ψ, ϵ = nut00a(day1, day2)
     ϵA, rb, rp, rbp, rn, rbpn = pn00(day1, day2, ψ, ϵ)
-    NamedTuple{(:ψ, :ϵ, :ϵA, :rb, :rp, :rbp, :rn, :rbpn)}((ψ, ϵ, ϵA, rb, rp, rbp, rn, rbpn))
+    (ψ = ψ, ϵ = ϵ, ϵA = ϵA, rb = rb, rp = rp, rbp = rbp, rn = rn, rbpn = rbpn)
 end
 
 """
@@ -3031,7 +3030,7 @@ n.b. The celestial ephemeris origin (CEO) was renamed "celestial
 function pn00b(day1::Float64, day2::Float64)
     ψ, ϵ = nut00b(day1, day2)
     ϵA, rb, rp, rbp, rn, rbpn = pn00(day1, day2, ψ, ϵ)
-    NamedTuple{(:ψ, :ϵ, :ϵA, :rb, :rp, :rbp, :rn, :rbpn)}((ψ, ϵ, ϵA, rb, rp, rbp, rn, rbpn))
+    (ψ = ψ, ϵ = ϵ, ϵA = ϵA, rb = rb, rp = rp, rbp = rbp, rn = rn, rbpn = rbpn)
 end
 
 """
@@ -3130,7 +3129,7 @@ function pn06(day1::Float64, day2::Float64, δψ::Float64, δϵ::Float64)
     rbpn = fw2m(γb, ϕb, ψb + δψ, ϵb + δϵ)
     #  Solve for nutation matrix
     rn = rbpn*rbp'
-    NamedTuple{(:ϵb, :rb, :rp, :rbp, :rn, :rbpn)}((ϵb, rb, rp, rbp, rn, rbpn))
+    (ϵb = ϵb, rb = rb, rp = rp, rbp = rbp, rn = rn, rbpn = rbpn)
 end
 
 """
@@ -3214,7 +3213,7 @@ Capitaine, N. & Wallace, P.T., 2006, Astron.Astrophys. 450, 855
 function pn06a(day1::Float64, day2::Float64)
     ψ, ϵ = nut06a(day1, day2)
     ϵA, rb, rp, rbp, rn, rbpn = pn06(day1, day2, ψ, ϵ)
-    NamedTuple{(:ψ, :ϵ, :ϵA, :rb, :rp, :rbp, :rn, :rbpn)}((ψ, ϵ, ϵA, rb, rp, rbp, rn, rbpn))
+    (ψ = ψ, ϵ = ϵ, ϵA = ϵA, rb = rb, rp = rp, rbp = rbp, rn = rn, rbpn = rbpn)
 end
 
 """
@@ -3540,7 +3539,8 @@ function pr00(day1::Float64, day2::Float64)
     Δt = ((day1 - JD2000) + day2)/(100*DAYPERYEAR)
     #  Precession and obliquity corrections (radians/century)/
     #  Precession rate contributions with respect to IAU 1976/1980
-    NamedTuple{(:ψ, :ϵ)}(deg2rad.((ψ_corr_2000, ϵ_corr_2000).*Δt./3600))
+    ψ, ϵ = deg2rad.((ψ_corr_2000, ϵ_corr_2000).*Δt./3600)
+    (ψ = ψ, ϵ = ϵ)
 end
 
 """
@@ -3617,7 +3617,8 @@ function prec76(day11::Float64, day12::Float64, day21::Float64, day22::Float64)
     ζ = Polynomial([0., wt, Polynomial(ζA_1976[1:2], :t0)(t0), ζA_1976[3]], :Δt)(Δt)
     z = Polynomial([0., wt, Polynomial(zA_1976[1:2], :t0)(t0), zA_1976[3]], :Δt)(Δt)
     θ = Polynomial([0., θt, Polynomial(θA_1976[1:2], :t0)(t0), θA_1976[3]], :Δt)(Δt)
-    NamedTuple{(:ζ, :z, :θ)}(deg2rad.((ζ, z, θ)./3600.0))
+    ζ, z, θ = deg2rad.((ζ, z, θ)./3600.0)
+    (ζ = ζ, z = z, θ = θ)
 end
 
 """
@@ -4214,7 +4215,8 @@ function xy06(day1::Float64, day2::Float64)
         ialast = ia-1
     end
 
-    NamedTuple{(:x, :y)}(deg2rad.((xypr .+ (xyls .+ xypl)./1e6)/3600.0))
+    x, y = deg2rad.((xypr .+ (xyls .+ xypl)./1e6)/3600.0)
+    (x = x, y = y)
 end
 
 """
@@ -4273,7 +4275,7 @@ function xys00a(day1::Float64, day2::Float64)
     #  Form bias-precession-nutation matrix (IAU 2000A) and extract x, y.
     x, y = bpn2xy(pnm00a(day1, day2))
     #  Obtain s
-    NamedTuple{(:x, :y, :s)}((x, y, s00(day1, day2, x, y)))
+    (x = x, y = y, s = s00(day1, day2, x, y))
 end
 
 """
@@ -4332,7 +4334,7 @@ function xys00b(day1::Float64, day2::Float64)
     #  Form bias-precession-nutation matrix (IAU 2000A) and extract x, y.
     x, y = bpn2xy(pnm00b(day1, day2))
     #  Obtain s
-    NamedTuple{(:x, :y, :s)}((x, y, s00(day1, day2, x, y)))
+    (x = x, y = y, s = s00(day1, day2, x, y))
 end
 
 """
@@ -4392,5 +4394,5 @@ function xys06a(day1::Float64, day2::Float64)
     #  Form bias-precession-nutation matrix (IAU 2000A) and extract x, y.
     x, y = bpn2xy(pnm06a(day1, day2))
     #  Obtain s
-    NamedTuple{(:x, :y, :s)}((x, y, s06(day1, day2, x, y)))
+    (x = x, y = y, s = s06(day1, day2, x, y))
 end

@@ -77,7 +77,7 @@ function pvstar(pv::Vector{Vector{Float64}})
     DC = SECPERDAY/(ASTRUNIT/LIGHTSPEED)
     #  Isolate the radial component of the velocity (AU/day, inertial).
     @inline vr = pn(pv[1])[2]'*pv[2]
-    @inline ur = vr*(pn(pv[1])[2])
+    @inline ur = vr*pn(pv[1])[2]
     #  Isolate the transverse component of the velocity (AU/day, inertial).
     @inline vt = pm(pv[2] .- ur)
     #  Special relativity dimensionless parameters.
@@ -90,10 +90,10 @@ function pvstar(pv::Vector{Vector{Float64}})
     #  Add them to obtain velocity vector (AU/day) and convert from
     #  cartesian to spherical
     ### θ, ϕ, r, dθ, dϕ, dr = pv2s([pv[1], w.*ur .+ (pv[2] .- ur)./d])
-    θ, ϕ, r, dθ, dϕ, dr = pv2s([pv[1], (DC*(betr + w/(1+sqrt(1-w))).*pv[1]./norm(pv[1])
-                                        .+ pv[2] .- ur)./d])
-    NamedTuple{(:ras, :dec, :pmras, :pmdec, :plx, :rvel)}(
-    (anp(θ), ϕ, DAYPERYEAR*dθ, DAYPERYEAR*dϕ, ASECPERRAD/r, 1e-3*ASTRUNIT/SECPERDAY*dr))
+    θ, ϕ, r, dθ, dϕ, dr = pv2s(
+        [pv[1], (DC*(betr + w/(1.0+sqrt(1.0-w)))*pn(pv[1])[2] .+ pv[2] .- ur)./d])
+    (ras = anp(θ), dec = ϕ, pmras = DAYPERYEAR*dθ, pmdec = DAYPERYEAR*dϕ,
+     plx = rad2deg(3600.0)/r, rvel = 1e-3*ASTRUNIT/SECPERDAY*dr)
 end
 
 const PXMIN = 1e-7

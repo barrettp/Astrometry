@@ -968,7 +968,7 @@ function pv2s(pv::Vector{Vector{Float64}})
     end
     r  = norm(pv[1])
     dr = norm([x, y, z]) != 0.0 ? (x*dx+y*dy+z*dz)/norm([x, y, z]) : 0.0
-    NamedTuple{(:θ, :ϕ, :r, :dθ, :dϕ, :dr)}((θ, ϕ, r, dθ, dϕ, dr))
+    (θ = θ, ϕ = ϕ, r = r, δθ = dθ, δϕ = dϕ, δr = dr)
 end
 
 """

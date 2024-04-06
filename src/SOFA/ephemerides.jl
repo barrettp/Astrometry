@@ -112,7 +112,7 @@ function epv00(day1::Float64, day2::Float64)
          ephem_velocity(bary_sun_y_0, bary_sun_y_1, bary_sun_y_2, Δt),
          ephem_velocity(bary_sun_z_0, bary_sun_z_1, bary_sun_z_2, Δt)]
 
-    NamedTuple{(:helio, :bary)}(([p_heli, v_heli], [p_bary, v_bary]))
+    (helio = [p_heli, v_heli], bary = [p_bary, v_bary])
 end
 
 """

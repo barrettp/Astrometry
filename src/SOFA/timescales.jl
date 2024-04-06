@@ -1,19 +1,23 @@
 #### Astronomy / Time Scales
 
 """ 
-    Format for output a 2-part Julian Date (or in the case of UTC a
-    quasi-JD form that includes special provision for leap seconds).
+    d2dtf(scale::String, ndp::Int, day1::Float64, day2::Float64)
 
-# Arguments
-- `scale::String`: time scale ID (Note 1)
-- `ndp::Int`: resolution (Note 2)
-- `day1::Real`: time as a 2-part Julian Date (Notes 3, 4)
-- `day2::Real`: time as a 2-part Julian Date (Notes 3, 4)
+Format for output a 2-part Julian Date (or in the case of UTC a
+quasi-JD form that includes special provision for leap seconds).
 
-# Returns
-- `date::NamedTuple{(year::Int, month::Int, day::Int, fraction::Int}`: year, month, day in Gregorian calendar (Note 1, 5)
+# Input
 
-Notes:
+ - `scale` -- time scale ID (Note 1)
+ - `ndp`   -- resolution (Note 2)
+ - `day1`  -- time as a 2-part Julian Date (Notes 3, 4)
+ - `day2`  -- time as a 2-part Julian Date (Notes 3, 4)
+
+# Output
+
+ - `date`  -- year, month, day in Gregorian calendar (Note 1, 5)
+
+# Note
 
 1) scale identifies the time scale.  Only the value "UTC" (in upper
    case) is significant, and enables handling of leap seconds (see
@@ -105,22 +109,26 @@ function d2dtf(scale::String, ndp::Int, day1::Float64, day2::Float64)
 end
 
 """
-    For a given UTC date, calculate Δ(AT) = TAI-UTC.
+    dat(year::Integer, month::Integer, day::Integer, subday::Float64)
 
-# Arguments
-- `year::Int`: year (Notes 1 and 2) (in UTC)
-- `month::Int`: month (Note 2)
-- `day::Int`: day (Notes 2 and 3)
-- `fraction::Real`: fraction of day (Note 4)
+For a given UTC date, calculate Δ(AT) = TAI-UTC.
 
-# Returns
-    - `Δt::Real`: TAI - UTC (in seconds)
+# Input
 
-Notes:
+ - `year`  -- year (Notes 1 and 2) (in UTC)
+ - `month` -- month (Note 2)
+ - `day`   -- day (Notes 2 and 3)
+ - `fraction` -- fraction of day (Note 4)
 
-1) UTC began at 1960 January 1.0 (JD 2436934.5) and it is improper
-   to call the function with an earlier date.  If this is attempted,
-   zero is returned together with a warning status.
+# Output
+
+ - `Δt`    -- TAI - UTC (in seconds)
+
+# Note
+
+1) UTC began at 1960 January 1.0 (JD 2436934.5) and it is improper to
+   call the function with an earlier date.  If this is attempted, zero
+   is returned together with a warning status.
 
    Because leap seconds cannot, in principle, be predicted in advance,
    a reliable check for dates beyond the valid range is impossible.
@@ -139,18 +147,17 @@ Notes:
    ends, the TAI-UTC returned is for the period following the leap
    second.
 
-3) The day number must be in the normal calendar range, for example
-   1 through 30 for April.  The "almanac" convention of allowing such
+3) The day number must be in the normal calendar range, for example 1
+   through 30 for April.  The "almanac" convention of allowing such
    dates as January 0 and December 32 is not supported in this
    function, in order to avoid confusion near leap seconds.
 
-4) The fraction of day is used only for dates before the
-   introduction of leap seconds, the first of which occurred at the
-   end of 1971.  It is tested for validity (0 to 1 is the valid range)
-   even if not used; if invalid, zero is used and status -4 is
-   returned.  For many applications, setting fd to zero is acceptable;
-   the resulting error is always less than 3 ms (and occurs only
-   pre-1972).
+4) The fraction of day is used only for dates before the introduction
+   of leap seconds, the first of which occurred at the end of 1971.
+   It is tested for validity (0 to 1 is the valid range) even if not
+   used; if invalid, zero is used and status -4 is returned.  For many
+   applications, setting fd to zero is acceptable; the resulting error
+   is always less than 3 ms (and occurs only pre-1972).
 
 5) The status value returned in the case where there are multiple
    errors refers to the first error detected.  For example, if the
@@ -160,7 +167,7 @@ Notes:
 
 6) In cases where a valid result is not available, zero is returned.
 
-References:
+# References
 
 1) For dates from 1961 January 1 onwards, the expressions from the
    file ftp://maia.usno.navy.mil/ser7/tai-utc.dat are used.
@@ -196,12 +203,15 @@ function dat(year::Integer, month::Integer, day::Integer, subday::Float64)
     Δt
 end
 
-""" 
-    An approximation to TDB-TT, the difference between barycentric
-    dynamical time and terrestrial time, for an observer on the Earth.
+"""
+    dtdb(day1::Float64, day2::Float64, ut1::Float64, eastlon::Float64,
+         u::Float64, v::Float64)
 
-    The different time scales - proper, coordinate and realized - are
-    related to each other:
+An approximation to TDB-TT, the difference between barycentric
+dynamical time and terrestrial time, for an observer on the Earth.
+
+The different time scales - proper, coordinate and realized - are
+related to each other:
 
           TAI             <-  physically realized
            :
@@ -227,21 +237,23 @@ end
            :
           TT              <-  terrestrial time
 
-    Adopted values for the various constants can be found in the IERS
-    Conventions (McCarthy & Petit 2003).
+Adopted values for the various constants can be found in the IERS
+Conventions (McCarthy & Petit 2003).
 
-# Arguments:
-- `day1::Float64`: TBD as part 1 of date (Notes 1-3)
-- `day2::Float64`: TDB as part 2 of date
-- `ut::Float64`: universal time (UT1, fraction of one day)
-- `elong::Float64`: longitude (east positive, radians)
-- `u::Float64`: distance from Earth spin axis (km)
-- `v::Float64`: distance north of equatorial plane (km)
+# Input
 
-# Returns:
-- `tdbtt::Float64`: TDB - TT
+ - `day1`  -- TBD as part 1 of date (Notes 1-3)
+ - `day2`  -- TDB as part 2 of date
+ - `ut`    -- universal time (UT1, fraction of one day)
+ - `elong` -- longitude (east positive, radians)
+ - `u`     -- distance from Earth spin axis (km)
+ - `v`     -- distance north of equatorial plane (km)
 
-Notes:
+# Output
+
+ - `tdbtt` -- TDB - TT
+
+# Note
 
 1) The date date1+date2 is a Julian Date, apportioned in any
    convenient way between the two arguments.  For example,
@@ -326,26 +338,24 @@ Notes:
    definitive method for predicting the relationship between TCG and
    TCB and hence between TT and TDB.
 
-References:
+# References
 
-   Fairhead, L., & Bretagnon, P., Astron.Astrophys., 229, 240-247
-   (1990).
+Fairhead, L., & Bretagnon, P., Astron.Astrophys., 229, 240-247 (1990).
 
-   IAU 2006 Resolution 3.
+IAU 2006 Resolution 3.
 
-   McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
-   Technical Note No. 32, BKG (2004)
+McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
+Technical Note No. 32, BKG (2004)
 
-   Moyer, T.D., Cel.Mech., 23, 33 (1981).
+Moyer, T.D., Cel.Mech., 23, 33 (1981).
 
-   Murray, C.A., Vectorial Astrometry, Adam Hilger (1983).
+Murray, C.A., Vectorial Astrometry, Adam Hilger (1983).
 
-   Seidelmann, P.K. et al., Explanatory Supplement to the Astronomical
-   Almanac, Chapter 2, University Science Books (1992).
+Seidelmann, P.K. et al., Explanatory Supplement to the Astronomical
+Almanac, Chapter 2, University Science Books (1992).
 
-   Simon, J.L., Bretagnon, P., Chapront, J., Chapront-Touze, M.,
-   Francou, G. & Laskar, J., Astron.Astrophys., 282, 663-683 (1994).
-
+Simon, J.L., Bretagnon, P., Chapront, J., Chapront-Touze, M., Francou,
+G. & Laskar, J., Astron.Astrophys., 282, 663-683 (1994).
 """
 function dtdb(day1::Float64, day2::Float64, ut1::Float64, eastlon::Float64,
               u::Float64, v::Float64)
@@ -396,25 +406,29 @@ function dtdb(day1::Float64, day2::Float64, ut1::Float64, eastlon::Float64,
     wt + wf + wj
 end
 
-""" 
-    Encode date and time fields into 2-part Julian Date (or in the
-    case of UTC a quasi-JD form that includes special provision for
-    leap seconds).
+"""
+    dtf2d(scale::String, year::Int, month::Int, day::Int, hour::Int,
+          minute::Int, second::Float64)
 
-# Arguments
-- `scale::String`: time scale ID (Note 1)
-- `year::Integer`: year in Gregorian calendar (Note 2)
-- `month::Integer`: month in Gregorian calendar (Note 2)
-- `day::Int`:: day in Gregorian calendar (Note 2)
-- `hour::Int`: hour
-- `minute::Int`: minute
-- `second::Real`: seconds
+Encode date and time fields into 2-part Julian Date (or in the case of
+UTC a quasi-JD form that includes special provision for leap seconds).
 
-# Returns
-- `day1::Real`: part 1 of Julian Date (Notes 3,4)
--` day2::Real`: part 2 of Julian Date (Notes 3,4)
+# Input
 
-Notes:
+ - `scale`  -- time scale ID (Note 1)
+ - `year`   -- year in Gregorian calendar (Note 2)
+ - `month`  -- month in Gregorian calendar (Note 2)
+ - `day`    -- day in Gregorian calendar (Note 2)
+ - `hour`   -- hour
+ - `minute` -- minute
+ - `second` -- seconds
+
+# Output
+
+ - `day1`   -- part 1 of Julian Date (Notes 3,4)
+ -` day2`   -- part 2 of Julian Date (Notes 3,4)
+
+# Note
 
 1) scale identifies the time scale.  Only the value "UTC" (in upper
    case) is significant, and enables handling of leap seconds (see
@@ -422,14 +436,14 @@ Notes:
 
 2) For calendar conventions and limitations, see eraCal2jd.
 
-3) The sum of the results, d1+d2, is Julian Date, where normally d1
-   is the Julian Day Number and d2 is the fraction of a day.  In the
-   case of UTC, where the use of JD is problematical, special
+3) The sum of the results, d1+d2, is Julian Date, where normally d1 is
+   the Julian Day Number and d2 is the fraction of a day.  In the case
+   of UTC, where the use of JD is problematical, special
 
-3) The sum of the results, d1+d2, is Julian Date, where normally d1
-   is the Julian Day Number and d2 is the fraction of a day.  In the
-   case of UTC, where the use of JD is problematical, special
-   conventions apply: see the next note.
+3) The sum of the results, d1+d2, is Julian Date, where normally d1 is
+   the Julian Day Number and d2 is the fraction of a day.  In the case
+   of UTC, where the use of JD is problematical, special conventions
+   apply: see the next note.
 
 4) JD cannot unambiguously represent UTC during a leap second unless
    special measures are taken.  The ERFA internal convention is that
@@ -454,8 +468,8 @@ Notes:
    with circumspection; in particular the difference between two such
    results cannot be interpreted as a precise time interval.
 """
-function dtf2d(scale::String, year::Int, month::Int, day::Int,
-               hour::Int, minute::Int, second::Float64)
+function dtf2d(scale::String, year::Int, month::Int, day::Int, hour::Int,
+               minute::Int, second::Float64)
     # Today's Julian Day number
     julday = sum(cal2jd(year, month, day))
 
@@ -484,29 +498,33 @@ function dtf2d(scale::String, year::Int, month::Int, day::Int,
     # The time in days
     subday = ((60.0*(60*hour + minute)) + second)/(SECPERDAY + Δt)
     
-    NamedTuple{(:day, :fraction)}((julday, subday))
+    (day = julday, fraction = subday)
 end
 
 """
-    Time scale transformation:  International Atomic Time, TAI, to
-    Terrestrial Time, TT.
+    taitt(day1::Float64, day2::Float64)
 
-# Arguments
-- `day1::Float64`: TAI as part 1 of Julian Date
-- `day2::Float64`: TAI as part 2 of Julian Date
+Time scale transformation: International Atomic Time, TAI, to
+Terrestrial Time, TT.
 
-# Returns
-- `tt1::Float64`: TT as part 1 of Julian Date
-- `tt2::Float64`: TT as part 2 of Julian Date
+# Input
 
-Note:
+ - `day1`  -- TAI as part 1 of Julian Date
+ - `day2`  -- TAI as part 2 of Julian Date
 
-   day1+day2 is Julian Date, apportioned in any convenient way between
+# Output
+
+ - `tt1`   -- TT as part 1 of Julian Date
+ - `tt2`   -- TT as part 2 of Julian Date
+
+# Note
+
+1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
    and day2 is the fraction of a day.  The returned (day1,day2) follow
    suit.
 
-References:
+# References
 
 1) McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
    Technical Note No. 32, BKG (2004)
@@ -515,25 +533,28 @@ References:
    Seidelmann (ed), University Science Books (1992)
 """
 function taitt(day1::Float64, day2::Float64)
-    NamedTuple{(:day, :fraction)}(abs(day1) > abs(day2) ?
-                                  (day1, day2 + TT_MINUS_TAI/SECPERDAY) :
-                                  (day1 + TT_MINUS_TAI/SECPERDAY, day2))
+    abs(day1) > abs(day2) ? (day = day1, fraction = day2 + TT_MINUS_TAI/SECPERDAY) :
+        (day = day1 + TT_MINUS_TAI/SECPERDAY, fraction = day2)
 end
 
 """
-    Time scale transformation:  International Atomic Time, TAI, to
-    Universal Time, UT1.
+    taiut1(day1::Float64, day2::Float64, Δt::Float64)
 
-# Arguments:
-- `day1::Float64`: TAI as part 1 of Julian Date
-- `day2::Float64`: TAI as part 2 of Julian Date
-- `dta::Float64`: UT1-TAI in seconds
+Time scale transformation: International Atomic Time, TAI, to
+Universal Time, UT1.
 
-# Returns:
-- `ut11::Float64`: UT1 as part 1 of Julian Date
-- `ut12::Float64`: UT1 as part 2 of Julian Date
+# Input
 
-Notes:
+ - `day1`  -- TAI as part 1 of Julian Date
+ - `day2`  -- TAI as part 2 of Julian Date
+ - `dta`   -- UT1-TAI in seconds
+
+# Output
+
+ - `ut11`  -- UT1 as part 1 of Julian Date
+ - `ut12`  -- UT1 as part 2 of Julian Date
+
+# Note
 
 1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where tai1 is the Julian Day Number
@@ -543,32 +564,33 @@ Notes:
 2) The argument dta, i.e. UT1-TAI, is an observed quantity, and is
    available from IERS tabulations.
 
-Reference:
+# References
 
-   Explanatory Supplement to the Astronomical Almanac, P. Kenneth
-   Seidelmann (ed), University Science Books (1992)
-
+Explanatory Supplement to the Astronomical Almanac, P. Kenneth
+Seidelmann (ed), University Science Books (1992)
 """
 function taiut1(day1::Float64, day2::Float64, Δt::Float64)
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (day1, day2 + Δt/SECPERDAY) :
-     (day1 + Δt/SECPERDAY, day2))
+    abs(day1) > abs(day2) ? (day = day1, fraction = day2 + Δt/SECPERDAY) :
+        (day = day1 + Δt/SECPERDAY, fraction = day2)
 end
 
 """
-    Time scale transformation: International Atomic Time, TAI, to
-    Coordinated Universal Time, UTC.
+    taiutc(day1::Float64, day2::Float64)
 
-# Arguments:
-- `day1::Float64`: TAI as part 1 of Julian Date (Note 1)
-- `day2::Float64`: TAI as part 2 of Julian Date
+Time scale transformation: International Atomic Time, TAI, to
+Coordinated Universal Time, UTC.
 
-Returns:
-- `utc1::Float64`: UTC as part 1 of quasi Julian Date (Notes 1-3)
-- `utc2::Float64`: UTC as part 2 of quasi Julian Date
+# Input
 
-Notes:
+ - `day1`  -- TAI as part 1 of Julian Date (Note 1)
+ - `day2`  -- TAI as part 2 of Julian Date
+
+# Output
+
+ - `utc1`  -- UTC as part 1 of quasi Julian Date (Notes 1-3)
+ - `utc2`  -- UTC as part 2 of quasi Julian Date
+
+# Note
 
 1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
@@ -592,38 +614,41 @@ Notes:
    introduction of the time scale or that are too far in the future to
    be trusted.  See eraDat for further details.
 
-References:
+# References
 
-   McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
-   Technical Note No. 32, BKG (2004)
+McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
+Technical Note No. 32, BKG (2004)
 
-   Explanatory Supplement to the Astronomical Almanac, P. Kenneth
-   Seidelmann (ed), University Science Books (1992)
+Explanatory Supplement to the Astronomical Almanac, P. Kenneth
+Seidelmann (ed), University Science Books (1992)
 """
 function taiutc(day1::Float64, day2::Float64)
     utc1, utc2 = tai1, tai2 = abs(day1) >= abs(day2) ? (day1, day2) : (day2, day1)
 
     for j=1:3
         #  Guess UTC to TAI and adjust guessed UTC
-        utc2 += sum((tai1, tai2) .- utctai(utc1, utc2))
+        utc2 += sum((tai1, tai2) .- values(utctai(utc1, utc2)))
     end
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) >= abs(day2) ? (utc1, utc2) : (utc2, utc1))
+    abs(day1) >= abs(day2) ? (day = utc1, fraction = utc2) : (day = utc2, fraction = utc1)
 end
 
 """
-    Time scale transformation: Barycentric Coordinate Time, TCB, to
-    Barycentric Dynamical Time, TDB.
+    tcbtdb(day1::Float64, day2::Float64)
 
-# Arguments:
-- `day1::Float64`: TCB as part 1 of Julian Date
-- `day2::Float64`: TCB as part 2 of Julian Date
+Time scale transformation: Barycentric Coordinate Time, TCB, to
+Barycentric Dynamical Time, TDB.
 
-# Return:
-- `tdb1::Float64`: TDB as part 1 of Julian Date
-- `tdb2::Float64`: TDB as part 2 of Julian Date
+# Input
 
-Notes:
+ - `day1`  -- TCB as part 1 of Julian Date
+ - `day2`  -- TCB as part 2 of Julian Date
+
+# Output
+
+ - `tdb1`  -- TDB as part 1 of Julian Date
+ - `tdb2`  -- TDB as part 2 of Julian Date
+
+# Note
 
 1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
@@ -647,66 +672,75 @@ Notes:
 3) TDB is essentially the same as Teph, the time argument for the JPL
    solar system ephemerides.
 
-Reference:
+# References
 
-   IAU 2006 Resolution B3
+IAU 2006 Resolution B3
 """
 function tcbtdb(day1::Float64, day2::Float64)
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (day1, day2 + TDB0/SECPERDAY -
-      ELB*((day1 - MJD0 - MJD77) + (day2 - TT_MINUS_TAI/SECPERDAY))) :
-     (day1 + TDB0/SECPERDAY -
-      ELB*((day1 - MJD0 - MJD77) + (day1 - TT_MINUS_TAI/SECPERDAY)), day2))
+    abs(day1) > abs(day2) ?
+        (day = day1, fraction = day2 + TDB0/SECPERDAY -
+         ELB*((day1 - MJD0 - MJD77) + (day2 - TT_MINUS_TAI/SECPERDAY))) :
+         (day = day1 + TDB0/SECPERDAY -
+          ELB*((day1 - MJD0 - MJD77) + (day1 - TT_MINUS_TAI/SECPERDAY)),
+          fraction = day2)
 end
 
 """
-    Time scale transformation: Geocentric Coordinate Time, TCG, to
-    Terrestrial Time, TT.
+    tcgtt(day1::Float64, day2::Float64)
 
-# Arguments:
-- `day1::Float64`: TCG as part 1 of Julian Date
-- `day2::Float64`: TCG as part 2 of Julian Date
+Time scale transformation: Geocentric Coordinate Time, TCG, to
+Terrestrial Time, TT.
 
-# Returns:
-- `tt1::Float64`: TT as part 1 of Julian Date
-- `tt1::Float64`: TT as part 2 of Julian Date
+# Input
 
-Note:
+ - `day1`  -- TCG as part 1 of Julian Date
+ - `day2`  -- TCG as part 2 of Julian Date
 
-   day1+day2 is Julian Date, apportioned in any convenient way between
+# Output
+
+ - `tt1`   -- TT as part 1 of Julian Date
+ - `tt1`   -- TT as part 2 of Julian Date
+
+# Note
+
+1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
    and day2 is the fraction of a day.  The returned (tt1, tt2) follow
    suit.
 
-References:
+# References
 
-   McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
-   Technical Note No. 32, BKG (2004)
+McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
+Technical Note No. 32, BKG (2004)
 
-   IAU 2000 Resolution B1.9
+IAU 2000 Resolution B1.9
 """
 function tcgtt(day1::Float64, day2::Float64)
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (day1, day2 - ELG*((day1 - MJD0) + (day2 - MJD77 - TT_MINUS_TAI/SECPERDAY))) :
-     (day1 - ELG*((day2 - MJD0) + (day1 - MJD77 - TT_MINUS_TAI/SECPERDAY)), day2))
+    abs(day1) > abs(day2) ?
+        (day = day1, fraction = day2 -
+        ELG*((day1 - MJD0) + (day2 - MJD77 - TT_MINUS_TAI/SECPERDAY))) :
+        (day = day1 -
+        ELG*((day2 - MJD0) + (day1 - MJD77 - TT_MINUS_TAI/SECPERDAY)),
+    fraction = day2)
 end
 
 """
+    tdbtcb(day1::Float64, day2::Float64)
 
-    Time scale transformation: Barycentric Dynamical Time, TDB, to
-    Barycentric Coordinate Time, TCB.
+Time scale transformation: Barycentric Dynamical Time, TDB, to
+Barycentric Coordinate Time, TCB.
 
-# Arguments:
-- `day1::Float64`: TDB as part 1 of Julian Date
-- `day2::Float64`: TDB as part 2 of Julian Date
+# Input
 
-# Returns:
-- `tcb1::Float64`: TCB as part 1 of Julian Date
-- `tcb2::Float64`: TCB as part 2 of Julian Date
+ - `day1`   -- TDB as part 1 of Julian Date
+ - `day2`   -- TDB as part 2 of Julian Date
 
-Notes:
+# Output
+
+ - `tcb1`   -- TCB as part 1 of Julian Date
+ - `tcb2`   -- TCB as part 2 of Julian Date
+
+# Note
 
 1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
@@ -730,36 +764,39 @@ Notes:
 3) TDB is essentially the same as Teph, the time argument for the JPL
    solar system ephemerides.
 
-Reference:
+# References
 
-   IAU 2006 Resolution B3
+IAU 2006 Resolution B3
 """
 function tdbtcb(day1::Float64, day2::Float64)
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (day1, day2 - TDB0/SECPERDAY -
-      ELB/(1.0 - ELB)*((MJD0 + MJD77 - day1) -
-                      (day2 - (TDB0 + TT_MINUS_TAI)/SECPERDAY))) :
-     (day1 - TDB0/SECPERDAY -
-      ELB/(1.0 - ELB)*((MJD0 + MJD77 - day2) -
-                      (day1 - (TDB0 + TT_MINUS_TAI)/SECPERDAY)), day2))
+    abs(day1) > abs(day2) ?
+        (day = day1, fraction = day2 - TDB0/SECPERDAY -
+        ELB/(1.0 - ELB)*((MJD0 + MJD77 - day1) -
+                         (day2 - (TDB0 + TT_MINUS_TAI)/SECPERDAY))) :
+        (day = day1 - TDB0/SECPERDAY -
+        ELB/(1.0 - ELB)*((MJD0 + MJD77 - day2) -
+                         (day1 - (TDB0 + TT_MINUS_TAI)/SECPERDAY)),
+    fraction = day2)
 end
 
 """
+    tdbtt(day1::Float64, day2::Float64, dtr::Float64)
 
-    Time scale transformation: Barycentric Dynamical Time, TDB, to
-    Terrestrial Time, TT.
+Time scale transformation: Barycentric Dynamical Time, TDB, to
+Terrestrial Time, TT.
 
-# Arguments:
-- `day1::Float64`: TDB as part 1 of Julian Date
-- `day2::Float64`: TDB as part 2 of Julian Date
-- `dtr::Float64`: TDB-TT in seconds
+# Input
 
-# Returns:
-- `tt1::Float64: TT as part 1 of Julian Date
-- `tt2::Float64: TT as part 2 of Julian Date
+ - `day1`  -- TDB as part 1 of Julian Date
+ - `day2`  -- TDB as part 2 of Julian Date
+ - `dtr`   -- TDB-TT in seconds
 
-Notes:
+# Output
+
+ - `tt1`   -- TT as part 1 of Julian Date
+ - `tt2`   -- TT as part 2 of Julian Date
+
+# Note
 
 1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
@@ -777,103 +814,114 @@ Notes:
 3) TDB is essentially the same as Teph, the time argument for the JPL
    solar system ephemerides.
 
-References:
+# References
 
-   McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
-   Technical Note No. 32, BKG (2004)
+McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
+Technical Note No. 32, BKG (2004)
 
-   IAU 2006 Resolution 3
+IAU 2006 Resolution 3
 """
 function tdbtt(day1::Float64, day2::Float64, dtr::Float64)
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ? (day1, day2 - dtr/SECPERDAY) :
-     (day1 - dtr/SECPERDAY, day2))
+    abs(day1) > abs(day2) ? (day = day1, fraction = day2 - dtr/SECPERDAY) :
+        (day = day1 - dtr/SECPERDAY, fraction = day2)
 end
 
 """
-    Time scale transformation: Terrestrial Time, TT, to International
-    Atomic Time, TAI.
+    tttai(day1::Float64, day2::Float64)
 
-# Arguments:
-- `day1::Float64`: TT as part 1 of Julian Date
-- `day2::Float64`: TT as part 2 of Julian Date
+Time scale transformation: Terrestrial Time, TT, to International
+Atomic Time, TAI.
 
-# Returns:
-- `tai1::Float64`: TAI as part 1 of Julian Date
-- `tai2::Float64`: TAI as part 2 of Julian Date
+# Input
 
-Note:
+ - `day1`  -- TT as part 1 of Julian Date
+ - `day2`  -- TT as part 2 of Julian Date
 
-   day1+day2 is Julian Date, apportioned in any convenient way between
+# Output
+
+ - `tai1`  -- TAI as part 1 of Julian Date
+ - `tai2`  -- TAI as part 2 of Julian Date
+
+# Note
+
+1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
    and day2 is the fraction of a day.  The returned tai1,tai2 follow
    suit.
 
-References:
+# References
 
-   McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
-   Technical Note No. 32, BKG (2004)
+McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
+Technical Note No. 32, BKG (2004)
 
-   Explanatory Supplement to the Astronomical Almanac, P. Kenneth
-   Seidelmann (ed), University Science Books (1992)
+Explanatory Supplement to the Astronomical Almanac, P. Kenneth
+Seidelmann (ed), University Science Books (1992)
 """
 function tttai(day1::Float64, day2::Float64)
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (day1, day2 - TT_MINUS_TAI/SECPERDAY) :
-     (day1 - TT_MINUS_TAI/SECPERDAY, day2))
+    abs(day1) > abs(day2) ?
+        (day = day1, frcation = day2 - TT_MINUS_TAI/SECPERDAY) :
+        (day = day1 - TT_MINUS_TAI/SECPERDAY, fraction = day2)
 end
 
 """
+    tttcg(day1::Float64, day2::Float64)
 
-    Time scale transformation: Terrestrial Time, TT, to Geocentric
-    Coordinate Time, TCG.
+Time scale transformation: Terrestrial Time, TT, to Geocentric
+Coordinate Time, TCG.
 
-# Arguments:
-- `day1::Float64`: TT as part 1 of Julian Date
-- `day2::Float64`: TT as part 2 of Julian Date
+# Input
 
-# Returns:
-- `tcg1::Float64`: TCG as part 1 of Julian Date
-- `tcg2::Float64`: TCG as part 2 of Julian Date
+ - `day1`  -- TT as part 1 of Julian Date
+ - `day2`  -- TT as part 2 of Julian Date
 
-Note:
+# Output
 
-   day1+day2 is Julian Date, apportioned in any convenient way between
+ - `tcg1`  -- TCG as part 1 of Julian Date
+ - `tcg2`  -- TCG as part 2 of Julian Date
+
+# Note
+
+1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
    and day2 is the fraction of a day.  The returned tcg1,tcg2 follow
    suit.
 
-References:
+# References
 
-   McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
-   Technical Note No. 32, BKG (2004)
+McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
+Technical Note No. 32, BKG (2004)
 
-   IAU 2000 Resolution B1.9
+IAU 2000 Resolution B1.9
 """
 function tttcg(day1::Float64, day2::Float64)
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (day1, day2 + ELG/(1.0 - ELG)*((day1 - MJD0) +
-                                    (day2 - MJD77 - TT_MINUS_TAI/SECPERDAY))) :
-     (day1 + ELG/(1.0 - ELG)*((day2 - MJD0) +
-                              (day1 - MJD77 - TT_MINUS_TAI/SECPERDAY)), day2))
+    abs(day1) > abs(day2) ?
+        (day = day1, fraction = day2 +
+        ELG/(1.0 - ELG)*((day1 - MJD0) +
+                         (day2 - MJD77 - TT_MINUS_TAI/SECPERDAY))) :
+        (day = day1 +
+        ELG/(1.0 - ELG)*((day2 - MJD0) +
+                         (day1 - MJD77 - TT_MINUS_TAI/SECPERDAY)),
+    fraction = day2)
 end
 
 """
-    Time scale transformation: Terrestrial Time, TT, to Barycentric
-    Dynamical Time, TDB.
+    tttdb(day1::Float64, day2::Float64, dtr::Float64)
 
-# Arguments:
-- `day1::Float64`: TT as part 1 of Julian Date
-- `day2::Float64`: TT as part 2 of Julian Date
-- `dtr::Float64`: TDB-TT in seconds
+Time scale transformation: Terrestrial Time, TT, to Barycentric
+Dynamical Time, TDB.
 
-# Returns:
-- `tdb1::Float64`: TDB as part 1 of Julian Date
-- `tdb2::Float64`: TDB as part 2 of Julian Date
+# Input
 
-Notes:
+ - `day1`  -- TT as part 1 of Julian Date
+ - `day2`  -- TT as part 2 of Julian Date
+ - `dtr`   -- TDB-TT in seconds
+
+# Output
+
+ - `tdb1`  -- TDB as part 1 of Julian Date
+ - `tdb2`  -- TDB as part 2 of Julian Date
+
+# Note
 
 1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
@@ -891,34 +939,37 @@ Notes:
 3) TDB is essentially the same as Teph, the time argument for the JPL
    solar system ephemerides.
 
-References:
+# References
 
-   McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
-   Technical Note No. 32, BKG (2004)
+McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
+Technical Note No. 32, BKG (2004)
 
-   IAU 2006 Resolution 3
+IAU 2006 Resolution 3
 """
 function tttdb(day1::Float64, day2::Float64, dtr::Float64)
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (day1, day2 + dtr/SECPERDAY) :
-     (day1 + dtr/SECPERDAY, day2))
+    abs(day1) > abs(day2) ?
+        (day = day1, fraction = day2 + dtr/SECPERDAY) :
+        (day = day1 + dtr/SECPERDAY, fraction = day2)
 end
 
-""" 
-    Time scale transformation: Terrestrial Time, TT, to Universal
-    Time, UT1.
+"""
+    ttut1(day1::Float64, day2::Float64, dt::Float64)
 
-# Arguments:
-- `day1::Float64`: TT as part 1 of Julian Date
-- `day2::Float64`: TT as part 2 of Julian Date
-` `dt::Float64`: TT-UT1 in seconds
+Time scale transformation: Terrestrial Time, TT, to Universal Time,
+UT1.
 
-# Returns:
-- `ut11::Float64`: UT1 as part 1 of Julian Date
-- `ut12::Float64`: UT1 as part 2 of Julian Date
+# Input
 
-Notes:
+ - `day1`  -- TT as part 1 of Julian Date
+ - `day2`  -- TT as part 2 of Julian Date
+ - `dt`    -- TT-UT1 in seconds
+
+# Output
+
+ - `ut11`  -- UT1 as part 1 of Julian Date
+ - `ut12`  -- UT1 as part 2 of Julian Date
+
+# Note
 
 1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
@@ -927,32 +978,35 @@ Notes:
 
 2) The argument dt is classical Delta T.
 
-Reference:
+# References
 
-   Explanatory Supplement to the Astronomical Almanac, P. Kenneth
-   Seidelmann (ed), University Science Books (1992)
+Explanatory Supplement to the Astronomical Almanac, P. Kenneth
+Seidelmann (ed), University Science Books (1992)
 """
 function ttut1(day1::Float64, day2::Float64, dt::Float64)
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (day1, day2 - dt/SECPERDAY) :
-     (day1 - dt/SECPERDAY, day2))
+    abs(day1) > abs(day2) ?
+        (day = day1, fraction = day2 - dt/SECPERDAY) :
+        (day = day1 - dt/SECPERDAY, fraction = day2)
 end
 
 """
-    Time scale transformation: Universal Time, UT1, to International
-    Atomic Time, TAI.
+    ut1tai(day1::Float64, day2::Float64, dta::Float64)
 
-# Arguments:
-- `day1::Float64`: UT1 as part 1 of Julian Date
-- `day2::Float64`: UT1 as part 2 of Julian Date
-- `dta::Float64`: UT1-TAI in seconds
+Time scale transformation: Universal Time, UT1, to International
+Atomic Time, TAI.
 
-# Returns:
-- `tai1::Float64`: TAI as part 1 of Julian Date
-- `tai2::Float64`: TAI as part 2 of Julian Date
+# Input
 
-Notes:
+ - `day1`  -- UT1 as part 1 of Julian Date
+ - `day2`  -- UT1 as part 2 of Julian Date
+ - `dta`   -- UT1-TAI in seconds
+
+# Output
+
+ - `tai1`  -- TAI as part 1 of Julian Date
+ - `tai2`  -- TAI as part 2 of Julian Date
+
+# Note
 
 1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
@@ -962,32 +1016,35 @@ Notes:
 2) The argument dta, i.e. UT1-TAI, is an observed quantity, and is
    available from IERS tabulations.
 
-Reference:
+# References
 
-   Explanatory Supplement to the Astronomical Almanac, P. Kenneth
-   Seidelmann (ed), University Science Books (1992)
+Explanatory Supplement to the Astronomical Almanac, P. Kenneth
+Seidelmann (ed), University Science Books (1992)
 """
 function ut1tai(day1::Float64, day2::Float64, dta::Float64)
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (day1, day2 - dta/SECPERDAY) :
-     (day1 - dta/SECPERDAY, day2))
+    abs(day1) > abs(day2) ?
+        (day = day1, fraction = day2 - dta/SECPERDAY) :
+        (day = day1 - dta/SECPERDAY, fraction = day2)
 end
 
 """
-Time scale transformation:  Universal Time, UT1, to Terrestrial
-Time, TT.
+    ut1tt(day1::Float64, day2::Float64, dt::Float64)
 
-# Arguments:
-- `day1::Float64`: UT1 as part 1 Julian Date (Note 1)
-- `day2::Float64`: UT1 as part 2 Julian Date
-- `dt::Float64`: TT-UT1 in seconds (Note 2)
+Time scale transformation: Universal Time, UT1, to Terrestrial Time,
+TT.
 
-# Returns:
-- `tt1::Float64`: TT as part 1 Julian Date
-- `tt2::Float64`: TT as part 2 Julian Date
+# Input
 
-Notes:
+ - `day1`  -- UT1 as part 1 Julian Date (Note 1)
+ - `day2`  -- UT1 as part 2 Julian Date
+ - `dt`    -- TT-UT1 in seconds (Note 2)
+
+# Output
+
+ - `tt1`   -- TT as part 1 Julian Date
+ - `tt2`   -- TT as part 2 Julian Date
+
+# Note
 
 1) day1+day2 is Julian Date, apportioned in any convenient way between
    the two arguments, for example where day1 is the Julian Day Number
@@ -996,32 +1053,35 @@ Notes:
 
 2) The argument dt is classical Delta T.
 
-Reference:
+# References
 
-   Explanatory Supplement to the Astronomical Almanac, P. Kenneth
-   Seidelmann (ed), University Science Books (1992)
+Explanatory Supplement to the Astronomical Almanac, P. Kenneth
+Seidelmann (ed), University Science Books (1992)
 """
 function ut1tt(day1::Float64, day2::Float64, dt::Float64)
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (day1, day2 + dt/SECPERDAY) :
-     (day1 + dt/SECPERDAY, day2))
+    abs(day1) > abs(day2) ?
+        (day = day1, fraction = day2 + dt/SECPERDAY) :
+        (day = day1 + dt/SECPERDAY, fraction = day2)
 end
 
 """
-    Time scale transformation:  Universal Time, UT1, to Coordinated
-    Universal Time, UTC.
+    ut1utc(day1::Float64, day2::Float64, duts::Float64)
 
-# Arguments:
-- `ut1::Float64`: UT1 as part 1 of Julian Date (Note 1)
-- `ut2::Float64`: UT1 as part 2 of Julian Date
-- `duts::Float64`: Delta UT1: UT1-UTC in seconds (Note 2)
+Time scale transformation: Universal Time, UT1, to Coordinated
+Universal Time, UTC.
 
-Returns:
-- `utc1::Float64`: UTC as part 1 of quasi Julian Date (Notes 3,4)
-- `utc2::Float64`: UTC as part 2 of quasi Julian Date (Notes 3,4)
+# Input
 
-Notes:
+ - `ut1`   -- UT1 as part 1 of Julian Date (Note 1)
+ - `ut2`   -- UT1 as part 2 of Julian Date
+ - `duts`  -- Delta UT1: UT1-UTC in seconds (Note 2)
+
+# Output
+
+ - `utc1`  -- UTC as part 1 of quasi Julian Date (Notes 3,4)
+ - `utc2`  -- UTC as part 2 of quasi Julian Date (Notes 3,4)
+
+# Note
 
 1) day1+day2 is Julian Date, apportioned in any convenient way
    between the two arguments, for example where day1 is the Julian
@@ -1048,16 +1108,15 @@ Notes:
    introduction of the time scale or that are too far in the future to
    be trusted.  See eraDat for further details.
 
-References:
+# References
 
-   McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
-   Technical Note No. 32, BKG (2004)
+McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
+Technical Note No. 32, BKG (2004)
 
-   Explanatory Supplement to the Astronomical Almanac, P. Kenneth
-   Seidelmann (ed), University Science Books (1992)
+Explanatory Supplement to the Astronomical Almanac, P. Kenneth
+Seidelmann (ed), University Science Books (1992)
 """
 function ut1utc(day1::Float64, day2::Float64, duts::Float64)
-
     #  See if the UT1 can possibly be in a leap-second day
     utc1, utc2 = abs(day1) >= abs(day2) ? (day1, day2) : (day2, day1)
     day1, dats1 = utc1, 0.0
@@ -1088,25 +1147,28 @@ function ut1utc(day1::Float64, day2::Float64, duts::Float64)
     end
 
     #  Subtract the (possibly adjusted) UT1-UTC from UT1 to give UTC.
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (utc1, utc2 - duts/SECPERDAY) :
-     (utc1 - duts/SECPERDAY, utc2))
+    abs(day1) > abs(day2) ?
+        (day = utc1, fraction = utc2 - duts/SECPERDAY) :
+        (day = utc1 - duts/SECPERDAY, fraction = utc2)
 end
 
 """
-    Time scale transformation: Coordinated Universal Time, UTC, to
-    International Atomic Time, TAI.
+    utctai(day1::Float64, day2::Float64)
 
-# Arguments:
-- `day1::Float64`: UTC as part 1 of quasi Julian Date (Notes 1-4)
-- `day2::Float64`: UTC as part 2 of quasi Julian Date
+Time scale transformation: Coordinated Universal Time, UTC, to
+International Atomic Time, TAI.
 
-# Returns:
-- `tai1::Float64`: TAI as part 1 of Julian Date (Note 5)
-- `tai2::Float64`: TAI as part 2 of Julian Date
+# Input
 
-Notes:
+ - `day1`  -- UTC as part 1 of quasi Julian Date (Notes 1-4)
+ - `day2`  -- UTC as part 2 of quasi Julian Date
+
+# Output
+
+ - `tai1`  -- TAI as part 1 of Julian Date (Note 5)
+ - `tai2`  -- TAI as part 2 of Julian Date
+
+# Note
 
 1) day1+day2 is quasi Julian Date (see Note 2), apportioned in any
    convenient way between the two arguments, for example where day1
@@ -1131,13 +1193,13 @@ Notes:
 5) The returned TAI1,TAI2 are such that their sum is the TAI Julian
    Date.
 
-References:
+# References
 
-   McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
-   Technical Note No. 32, BKG (2004)
+McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
+Technical Note No. 32, BKG (2004)
 
-   Explanatory Supplement to the Astronomical Almanac, P. Kenneth
-   Seidelmann (ed), University Science Books (1992)
+Explanatory Supplement to the Astronomical Almanac, P. Kenneth
+Seidelmann (ed), University Science Books (1992)
 """
 function utctai(day1::Float64, day2::Float64)
 
@@ -1166,27 +1228,29 @@ function utctai(day1::Float64, day2::Float64)
     #  Today's calendar date to JD
     today1, today2 = cal2jd(year, month, day)
     
-    NamedTuple{(:day, :fraction)}
-    (abs(day1) > abs(day2) ?
-     (utc1, today1 - utc1 + today2 + frac + dat00/SECPERDAY) :
-     (today1 - utc1 + today2 + frac + dat00/SECPERDAY, utc1))
+    abs(day1) > abs(day2) ?
+        (day = utc1, fraction = today1 - utc1 + today2 + frac + dat00/SECPERDAY) :
+        (day = today1 - utc1 + today2 + frac + dat00/SECPERDAY, fraction = utc1)
 end
 
 """
+    utcut1(day1::Float64, day2::Float64, dut1::Float64)
 
-    Time scale transformation:  Coordinated Universal Time, UTC, to
-    Universal Time, UT1.
+Time scale transformation: Coordinated Universal Time, UTC, to
+Universal Time, UT1.
 
-# Arguments:
-- `day1::Float64`: UTC as part 1 of quasi Julian Date (Notes 1-4)
-- `day2::Float64`: UTC as part 2 of quasi Julian Date
-- `dut1::Float64`: Delta UT1 = UT1-UTC in seconds (Note 5)
+# Input
 
-# Returns:
-- `ut11::Float64`: UT1 as part 1 of Julian Date
-- `ut12::Float64`: UT1 as part 2 of Julian Date
+ - `day1`  -- UTC as part 1 of quasi Julian Date (Notes 1-4)
+ - `day2`  -- UTC as part 2 of quasi Julian Date
+ - `dut1`  -- Delta UT1 = UT1-UTC in seconds (Note 5)
 
-Notes:
+# Output
+
+ - `ut11`  -- UT1 as part 1 of Julian Date
+ - `ut12`  -- UT1 as part 2 of Julian Date
+
+# Note
 
 1) day1+day2 is quasi Julian Date (see Note 2), apportioned in any
    convenient way between the two arguments, for example where day1 is
@@ -1213,13 +1277,13 @@ Notes:
 6) The returned ut11,ut12 are such that their sum is the UT1 Julian
    Date.
 
-References:
+# References
 
-   McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
-   Technical Note No. 32, BKG (2004)
+McCarthy, D. D., Petit, G. (eds.), IERS Conventions (2003), IERS
+Technical Note No. 32, BKG (2004)
 
-   Explanatory Supplement to the Astronomical Almanac, P. Kenneth
-   Seidelmann (ed), University Science Books (1992)
+Explanatory Supplement to the Astronomical Almanac, P. Kenneth
+Seidelmann (ed), University Science Books (1992)
 """
 function utcut1(day1::Float64, day2::Float64, dut1::Float64)
     

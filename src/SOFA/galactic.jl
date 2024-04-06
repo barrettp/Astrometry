@@ -67,7 +67,7 @@ function g2icrs(lon::Float64, lat::Float64)
     Rx(π/2-Q) Rz(π/2+P) to the full precision shown.
     =#
     ras, dec = c2s(r_gal_icrs'*s2c(lon, lat))
-    NamedTuple{(:ras, :dec)}((anp(ras), anpm(dec)))
+    (RA = anp(ras), Dec = anpm(dec))
 end
 
 """
@@ -137,5 +137,5 @@ function icrs2g(ras::Float64, dec::Float64)
     R_1(π/2-Q) R_3(π/2+P) to the full precision shown:
     =#
     @inline lon, lat = c2s(r_gal_icrs*s2c(ras, dec))
-    NamedTuple{(:lon, :lat)}((anp(lon), anpm(lat)))
+    (lon = anp(lon), lat = anpm(lat))
 end

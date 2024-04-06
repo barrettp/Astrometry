@@ -57,7 +57,7 @@ function eform(model::Symbol)
     elseif model == :WGS72
         radius, oblate = wgs72_radius, wgs72_oblate
     end
-    NamedTuple{(:radius, :oblate)}((radius, oblate))
+    (radius = radius, oblate = oblate)
 end
 
 """
@@ -174,7 +174,7 @@ function gc2gde(radius::Float64, oblate::Float64, pos::Vector{Float64})
     else
         ϵ, ϕ, r = 0.0, π/2, abs(pos[3]) - radius*ec
     end
-    NamedTuple{(:ϵ, :ϕ, :r)}((ϵ, ϕ, r))
+    (ϵ = ϵ, ϕ = ϕ, r = r)
 end
 
 """

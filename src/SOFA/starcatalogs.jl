@@ -115,11 +115,11 @@ function fk425(ra::Float64, dec::Float64, δra::Float64, δdec::Float64,
     # println(r01)
     # r1  = r0 .- A_fk4_fk5 .+ (r01'*A_fk4_fk5)*r01
     # println(r1)
-    r1_ = [r0_[1] .- A_fk4_fk5[1:3] .+ (r0_[1]'*A_fk4_fk5[1:3])*r0_[1],
-           r0_[2] .- A_fk4_fk5[4:6] .+ (r0_[1]'*A_fk4_fk5[4:6])*r0_[1]]
+    r1_ = [r0_[1] .- A_fk4_fk5[1:3] .+ dot(r0_[1], A_fk4_fk5[1:3])*r0_[1],
+           r0_[2] .- A_fk4_fk5[4:6] .+ dot(r0_[1], A_fk4_fk5[4:6])*r0_[1]]
     # println(r1_)
     # pv = M_fk4_fk5*(r0 .- A_fk4_fk5 .+ (r01'*A_fk4_fk5)*r01)
-    pv_ = [[Mfk4fk5[i][j][1]'*r1_[1] + Mfk4fk5[i][j][2]'*r1_[2] for j=1:3] for i=1:2]
+    pv_ = [[dot(Mfk4fk5[i][j][1], r1_[1]) + dot(Mfk4fk5[i][j][2], r1_[2]) for j=1:3] for i=1:2]
     # println(pv)
     # println(pv_)
     #  Revert to catalog form
@@ -128,8 +128,7 @@ function fk425(ra::Float64, dec::Float64, δra::Float64, δdec::Float64,
     if plx > TINY
         plx, rv = plx/cat[3], cat[6]/(VF*plx)
     end
-    NamedTuple{(:RA, :Dec, :δRA, :δDec, :plx, :rv)}(
-        (mod2pi(cat[1]), cat[2], cat[4]/PMF, cat[5]/PMF, plx, rv))
+    (RA = mod2pi(cat[1]), Dec = cat[2], δRA = cat[4]/PMF, δDec = cat[5]/PMF, plx = plx, rv = rv)
 end
 
 """
@@ -208,14 +207,14 @@ function fk45z(ra::Float64, dec::Float64, epoch::Float64)
     #  motion in FK5.
     r1, p = s2c(ra, dec),  A_fk4_fk5[1:3] .+ (epoch - 1950.0)/PMF.*A_fk4_fk5[4:6]
     #  Remove E-terms
-    p  = r1 .- (p .- (r1'*p).*r1)
+    p  = r1 .- (p .- dot(r1, p).*r1)
     #  Convert to Fricke system pv-vector (cf. Seidelmann 3.591-3)
-    pv = [[Mfk4fk5[i][j][1]'*p for j=1:3] for i=1:2]
+    pv = [[dot(Mfk4fk5[i][j][1], p) for j=1:3] for i=1:2]
     #  Allow for fictitious proper motion
     pv = pvu((epj(epb2jd(epoch)...) - 2000.0)/PMF, pv)
     #  Revert to spherical coordinates
     ra, dec = c2s(pv[1])
-    NamedTuple{(:RA, :Dec)}((mod2pi(ra), dec))
+    (RA = mod2pi(ra), Dec = dec)
 end
 
 """
@@ -322,20 +321,19 @@ function fk524(ra::Float64, dec::Float64, δra::Float64, δdec::Float64, plx::Fl
     #  Express as a pv-vector
     r0 = s2pv(ra, dec, 1.0, PMF*δra, PMF*δdec, VF*plx*rv)
     #  Convert pv-vector to Bessel-Newcomb system (cf. Seidelmann 3.592-1)
-    r1 = [[Mfk5fk4[i][j][1]'*r0[1] + Mfk5fk4[i][j][2]'*r0[2] for j=1:3] for i=1:2]
+    r1 = [[dot(Mfk5fk4[i][j][1], r0[1]) + dot(Mfk5fk4[i][j][2], r0[2]) for j=1:3] for i=1:2]
     #  Apply E-terms (equivalent to Seidelmann 3.592-3, one iteration)
     #  Direction
-    p1 = r1[1] .+ norm(r1[1])*A_fk4_fk5[1:3] .- (r1[1]'*A_fk4_fk5[1:3])*r1[1]
+    p1 = r1[1] .+ norm(r1[1])*A_fk4_fk5[1:3] .- dot(r1[1], A_fk4_fk5[1:3])*r1[1]
     #  Direction
-    pv1 = r1[1] .+ norm(p1)*A_fk4_fk5[1:3] .- (r1[1]'*A_fk4_fk5[1:3])*r1[1]
-    pv2 = r1[2] .+ norm(p1)*A_fk4_fk5[4:6] .- (r1[1]'*A_fk4_fk5[4:6])*pv1
+    pv1 = r1[1] .+ norm(p1)*A_fk4_fk5[1:3] .- dot(r1[1], A_fk4_fk5[1:3])*r1[1]
+    pv2 = r1[2] .+ norm(p1)*A_fk4_fk5[4:6] .- dot(r1[1], A_fk4_fk5[4:6])*pv1
     #  Revert to catalog form
     cat = pv2s([pv1, pv2])
     if plx > TINY
         plx, rv = plx/cat[3], cat[6]/(plx*VF)
     end
-    NamedTuple{(:RA, :Dec, :δRA, :δDec, :plx, :rv)}(
-        (mod2pi(cat[1]), cat[2], cat[4]/PMF, cat[5]/PMF, plx, rv))
+    (RA = mod2pi(cat[1]), Dec = cat[2], δRA = cat[4]/PMF, δDec = cat[5]/PMF, plx = plx, rv = rv)
 end
 """
     fk52h(ra::Float64, dec::Float64, δra::Float64, δdec::Float64, plx::Float64,
@@ -458,7 +456,7 @@ function fk54z(ra::Float64, dec::Float64, epoch::Float64)
         cat[4]*[-cos(cat[1])*sin(cat[2]), -sin(cat[1])*sin(cat[2]), cos(cat[2])])
     #  Cartesian to spherical
     ra, dec = c2s(p1)
-    NamedTuple{(:RA, :Dec, :δRA, :δDec)}((mod2pi(ra), dec, cat[3], cat[4]))
+    (RA = mod2pi(ra), Dec = dec, δRA = cat[3], δDec = cat[4])
 end
 
 """
@@ -498,8 +496,7 @@ F.Mignard & M.Froeschle, Astron.Astrophys., 354, 732-739 (2000).
 """
 function fk5hip()
     #  FK5 wrt Hipparcos orientation and spin (radians, radians/year)
-    NamedTuple{(:pos, :rot)}(
-        (rv2m(deg2rad(1/3600.0).*ϵ_hipparcos), deg2rad(1/3600.0).*ω_hipparcos))
+    (pos = rv2m(deg2rad(1/3600.0).*ϵ_hipparcos), rot = deg2rad(1/3600.0).*ω_hipparcos)
 end
 
 """
@@ -574,7 +571,7 @@ function fk5hz(ra::Float64, dec::Float64, day1::Float64, day2::Float64)
     #  the interval, de-rotate the vector's FK5 axes back to the date, rotate
     #  the vector into the Hipparcos system, and convert to spherical
     ra, dec = c2s(ϵ*rv2m(Δt.*ω)'*s2c(ra, dec))
-    NamedTuple{(:RA, :Dec)}((mod2pi(ra), dec))
+    (RA = mod2pi(ra), Dec = dec)
 end
 
 """
@@ -716,7 +713,7 @@ function hfk5z(ra::Float64, dec::Float64, day1::Float64, day2::Float64)
     #  Hipparcos system, apply spin to the position giving the space motion,
     #  and de-orient and de-spin the Hipparcos space motion into the Fk5 J2000.0
     cat = pv2s([(ϵ*rv2m(Δt*ω))'*p, (ϵ*rv2m(Δt*ω))'*(vec2mat(ϵ*ω)*p)])
-    NamedTuple{(:RA, :Dec, :δRA, :δDec)}((mod2pi(cat[1]), cat[2], cat[4], cat[5]))
+    (RA = mod2pi(cat[1]), Dec = cat[2], δRA = cat[4], δDec = cat[5])
 end
 
 """
@@ -829,7 +826,7 @@ function starpm(ras::Float64, dec::Float64, pmras::Float64, pmdec::Float64,
     pv = pvu(Δt + tl1, pv1)
     #  From this geometric position, deduce the observed light time (days)
     #  at the "after" epoch (with theoretically unnecesary error check).
-    r2, rdv, v2 = pv[1]'*pv[1], pv[1]'*pv[2], pv[2]'*pv[2]
+    r2, rdv, v2 = dot(pv[1], pv[1]), dot(pv[1], pv[2]), dot(pv[2], pv[2])
     c2mv2 = DC^2 - v2 # (SECPERDAY*LIGHTSPEED/ASTRUNIT)^2 - v2
     @assert c2mv2 > 0
     tl2 = (-rdv + sqrt(rdv^2 + c2mv2*r2))/c2mv2

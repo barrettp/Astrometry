@@ -218,9 +218,8 @@ Green, R.M., "Spherical Astronomy", Cambridge University Press, 1987,
 Chapter 13.
 """
 function tpsts(ξ::Float64, η::Float64, a0::Float64, b0::Float64)
-    NamedTuple{(:a, :b)}
-    ((mod2pi(atan(ξ, cos(b0) - η*sin(b0)) + a0),
-      atan(sin(b0) + η*cos(b0), sqrt(ξ*ξ+(cos(b0) - η*sin(b0))^2))))
+    (a = mod2pi(atan(ξ, cos(b0) - η*sin(b0)) + a0),
+     b = atan(sin(b0) + η*cos(b0), sqrt(ξ*ξ+(cos(b0) - η*sin(b0))^2)))
 end
 
 """
@@ -349,8 +348,7 @@ function tpxes(a::Float64, b::Float64, a0::Float64, b0::Float64)
     else
         nothing
     end
-    NamedTuple{(:ξ, :η)}
-    (cos(b)*sin(a - a0)/d, (sin(b)*cos(b0) - cos(b)*sin(b0)*cos(a - a0))/d)
+    (ξ = cos(b)*sin(a - a0)/d, η = (sin(b)*cos(b0) - cos(b)*sin(b0)*cos(a - a0))/d)
 end
 
 """
@@ -428,5 +426,6 @@ function tpxev(v::Vector{Float64}, v0::Vector{Float64})
     else
         nothing
     end
-    NamedTuple{(:ξ, :η)}((y*x0 - x*y0, z*sum(v0[1:2].^2) - z0*(x*x0 + y*y0))./(d*r))
+    NamedTuple{(:ξ, :η)}(
+        (y*x0 - x*y0, z*sum(v0[1:2].^2) - z0*(x*x0 + y*y0))./(d*r))
 end

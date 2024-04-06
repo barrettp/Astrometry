@@ -1508,7 +1508,8 @@ function atci13(rc::Float64, dc::Float64, pr::Float64, pd::Float64,
     #  The transformation parameters.
     a, eo = apci13(day1, day2)
     #  ICRS (epoch J2000.0) to CIRS.
-    NamedTuple{(:ra, :dec, :eo)}((values(atciq(rc, dc, pr, pd, px, rv, a))..., eo))
+    ra, dec = values(atciq(rc, dc, pr, pd, px, rv, a))
+    (ra = ra, dec = dec, eo = eo)
 end
 
 """
@@ -1528,12 +1529,12 @@ be used instead.
 
 # Input
 
- - 'rc, dc' -- ICRS RA,Dec at J2000.0 (radians, Note 1)
- - 'pr'     -- RA proper motion (radians/year, Note 2)
- - 'pd'     -- Dec proper motion (radians/year)
- - 'px'     -- parallax (arcsec)
- - 'rv'     -- radial velocity (km/s, +ve if receding)
- - 'astrom' -- star-independent astrometry parameters:
+ - `rc, dc` -- ICRS RA,Dec at J2000.0 (radians, Note 1)
+ - `pr`     -- RA proper motion (radians/year, Note 2)
+ - `pd`     -- Dec proper motion (radians/year)
+ - `px`     -- parallax (arcsec)
+ - `rv`     -- radial velocity (km/s, +ve if receding)
+ - `astrom` -- star-independent astrometry parameters:
 
 # Output
 
@@ -1556,7 +1557,7 @@ function atciq(rc::Float64, dc::Float64, pr::Float64, pd::Float64,
     #  Bias-precession-Nutation, giving CIRS proper direction.
     ri, di = c2s(a.bpn*ab(ldsun(pmpx(rc, dc, pr, pd, px, rv, a.pmt, a.eb),
                                 a.eh, a.em), a.v, a.em, a.bm1))
-    NamedTuple{(:ra, :dec)}((mod2pi(ri), di))
+    (ra = mod2pi(ri), dec = di)
 end
 
 """
@@ -1639,7 +1640,7 @@ function atciqn(rc::Float64, dc::Float64, pr::Float64, pd::Float64,
     ra, dec = c2s(a.bpn*ab(
         ldn(n, b, a.eb, pmpx(rc, dc, pr, pd, px, rv, a.pmt, a.eb)),
         a.v, a.em, a.bm1))
-    NamedTuple{(:ra, :dec)}((mod2pi(ra), dec))
+    (ra = mod2pi(ra), dec = dec)
 end
 
 """
@@ -1658,8 +1659,9 @@ proper motion is eraAtciq.
 
 # Input
 
- - 'rc, dc' -- ICRS astrometric RA,Dec (radians)
- - 'astrom' -- star-independent astrometry parameters:
+ - `rc`    -- ICRS astrometric RA (radians)
+ - `dc`    -- ICRS astrometric Dec (radians)
+ - `astrom` -- star-independent astrometry parameters:
 
 # Output
 
@@ -1685,7 +1687,7 @@ function atciqz(rc::Float64, dc::Float64, a::Astrom)
     #  Bias-precession-nutation, giving CIRS proper direction.
     #  CIRS to RA, Dec.
     ra, dec = c2s(a.bpn*ab(ldsun(s2c(rc, dc), a.eh, a.em), a.v, a.em, a.bm1))
-    NamedTuple{(:ra, :dec)}((mod2pi(ra), dec))
+    (ra = mod2pi(ra), dec = dec)
 end
 
 """
@@ -1721,12 +1723,12 @@ nutation, Earth orientation and refraction.
 
 # Output
 
- - 'aob`    -- observed azimuth (radians: N=0,E=90)
- - 'zob`    -- observed zenith distance (radians)
- - 'hob`    -- observed hour angle (radians)
- - 'dob`    -- observed declination (radians)
- - 'rob`    -- observed right ascension (CIO-based, radians)
- - 'eo`     -- equation of the origins (ERA-GST)
+ - `aob`    -- observed azimuth (radians: N=0,E=90)
+ - `zob`    -- observed zenith distance (radians)
+ - `hob`    -- observed hour angle (radians)
+ - `dob`    -- observed declination (radians)
+ - `rob`    -- observed right ascension (CIO-based, radians)
+ - `eo`     -- equation of the origins (ERA-GST)
 
 # Note
 
@@ -1832,7 +1834,7 @@ function atco13(rc::Float64, dc::Float64, pr::Float64, pd::Float64,
     a, eo = apco13(utc1, utc2, dut1, elong, ϕ, rm, xp, yp, phpa, tc, rh, wl)
     #  Transform ICRS to CIRS and CIRS to observed.
     azi, zen, ha, dec, ra = atioq(atciq(rc, dc, pr, pd, px, rv, a)..., a)
-    NamedTuple{(:azi, :zen, :ha, :dec, :ra, :eo)}((azi, zen, ha, dec, ra, eo))
+    (azi = azi, zen = zen, ha = ha, dec = dec, ra = ra, eo = eo)
 end
 
 """
@@ -1902,7 +1904,8 @@ Transform star RA,Dec from geocentric CIRS to ICRS astrometric.
 """
 function atic13(ri::Float64, di::Float64, day1::Float64, day2::Float64)
     a, eo = apci13(day1, day2)
-    NamedTuple{(:ra, :dec, :eo)}((aticq(ri, di, a)..., eo))
+    ra, dec = aticq(ri, di, a)
+    (ra = ra, dec = dec, eo)
 end
 
 """
@@ -1962,7 +1965,7 @@ function aticq(ri::Float64, di::Float64, a::Astrom)
     end
     #  ICRS astrometric RA, Dec.
     ra, dec = c2s(pco)
-    NamedTuple{(:ra, :dec)}((mod2pi(ra), dec))
+    (ra = mod2pi(ra), dec = dec)
 end
 
 """
@@ -2052,7 +2055,7 @@ function aticqn(ri::Float64, di::Float64, a::Astrom, n::Int, b::Vector{Ldbody})
         pco .= (pnat .- d)./norm(pnat .- d)
     end
     rc, dc = c2s(pco)
-    NamedTuple{(:ra, :dec)}((mod2pi(rc), dc))
+    (ra = mod2pi(rc), dec = dc)
 end
 
 """
@@ -2181,7 +2184,7 @@ function atio13(ri::Float64, di::Float64, utc1::Float64, utc2::Float64, dut1::Fl
     #  Transform CIRS to observed.
     aob, zob, hob, dob, rob = atioq(ri, di, apio13(
         utc1, utc2, dut1, elong, ϕ, hm, xp, yp, phpa, tc, rh, wl, Astrom()))
-    NamedTuple{(:az, :zen, :h, :dec, :ra)}((aob, zob, hob, dob, rob))
+    (azi = aob, zen = zob, ha = hob, dec = dob, ra = rob)
 end
 
 """
@@ -2281,8 +2284,7 @@ function atioq(ri::Float64, di::Float64, a::Astrom)
     hmob, dcob = c2s([a.sphi 0.0 a.cphi; 0.0 1.0 0.0; -a.cphi 0.0 a.sphi]*aeo)
     #  Right ascension (with respect to CIO).
     raob = a.eral + hmob
-    NamedTuple{(:az, :ze, :ha, :dec, :ra)}((
-        mod2pi(azob), zdob, -hmob, dcob, mod2pi(raob)))
+    (azi = mod2pi(azob), zen = zdob, ha = -hmob, dec = dcob, ra = mod2pi(raob))
 end
 
 """
@@ -2419,7 +2421,8 @@ function atoc13(tp::Char, ob1::Float64, ob2::Float64, utc1::Float64, utc2::Float
     #  Transform observed to CIRS
     ri, di = atoiq(tp, ob1, ob2, a)
     #  Transform CIRS to ICRS
-    NamedTuple{(:ra, :dec)}(values(aticq(ri, di, a)))
+    ra, dec = values(aticq(ri, di, a))
+    (ra = ra, dec = dec)
 end
 
 """
@@ -2555,7 +2558,7 @@ function atoi13(tp::Char, ob1::Float64, ob2::Float64, utc1::Float64, utc2::Float
     #  Transform observed to CIRS.
     ri, di = atoiq(tp, ob1, ob2, apio13(utc1, utc2, dut1, elong, ϕ,
                                        hm, xp, yp, phpa, tc, rh, wl))
-    NamedTuple{(:ra, :dec)}((ri, di))
+    (ra = ri, dec = di)
 end
 
 """
@@ -2583,7 +2586,7 @@ eraApio[13] or eraApco[13].
 
 # Note
 
-1) "Observed" Az,El means the position that would be seen by a perfect
+1) "Observed" Az,Zd means the position that would be seen by a perfect
    geodetically aligned theodolite.  This is related to the observed
    HA,Dec via the standard rotation, using the geodetic latitude
    (corrected for polar motion), while the observed HA and RA are
@@ -2654,7 +2657,7 @@ function atoiq(tp::Char, ob1::Float64, ob2::Float64, a::Astrom)
     hma, dec = c2s([cos(a.xpl)  sin(a.xpl)*sin(a.ypl) -sin(a.xpl)*cos(a.ypl);
                           0.0              cos(a.ypl)             sin(a.ypl);
                     sin(a.xpl) -cos(a.xpl)*sin(a.ypl)  cos(a.xpl)*cos(a.ypl)]*hd)
-    NamedTuple{(:ra, :dec)}((mod2pi(a.eral + hma), dec))
+    (ra = mod2pi(a.eral + hma), dec = dec)
 end
 
 """
@@ -2722,7 +2725,7 @@ function ld(bm::Float64, p::Vector{Float64}, q::Vector{Float64},
             e::Vector{Float64}, em::Float64, dlim::Float64)
     #  2*G*bm/(em*c^2*(q*(q+e))).
     #  Apply the deflection.
-    p .+ SCHWARZRADIUS*bm/em/maximum((q'*(q.+e), dlim)) .* pxp(p, pxp(e, q))
+    p .+ SCHWARZRADIUS*bm/em/maximum((dot(q, (q.+e)), dlim)) .* pxp(p, pxp(e, q))
 end
 
 """
@@ -2801,7 +2804,7 @@ function ldn(n::Int, b::Vector{Ldbody}, ob::Vector{Float64}, sc::Vector{Float64}
         #  Body to observer vector at epoch of observation (AU).
         v  = ob .- body.pv[1]
         #  Minus the time since the light passed the body (days).
-        Δt = minimum((ASTRUNIT/LIGHTSPEED/SECPERDAY*sn'*v, 0.0))
+        Δt = minimum((ASTRUNIT/LIGHTSPEED/SECPERDAY*dot(sn, v), 0.0))
         #  Backtrack the body to the time the light was passing the body.
         #  Body to observer vector as magnitude and direction.
         em, e = pn(v .- Δt.*body.pv[2])
@@ -2897,7 +2900,7 @@ function pmpx(rc::Float64, dc::Float64, pr::Float64, pd::Float64,
           rvpx*p[3] + pd*cos(dc)]
     #  Proper motion time interval (y) including Roemer effect.
     #  Coordinate direction of star (unit vector, BCRS).
-    p  .+= (pmt + AULIGHT*p'*pob).*pm - deg2rad(px/3600.0).*pob
+    p  .+= (pmt + AULIGHT*dot(p, pob)).*pm - deg2rad(px/3600.0).*pob
     p./norm(p)
 end
 
@@ -2991,7 +2994,7 @@ special handling to handle the zero parallax case.
    status.
 """
 function pmsafe(ra::Float64, dec::Float64, pmr::Float64, pmd::Float64,
-                px::Float64, rv::Float64, ep1a::Float64, ep1b::Float64,
+                plx::Float64, rv::Float64, ep1a::Float64, ep1b::Float64,
                 ep2a::Float64, ep2b::Float64)
     ### println("$ra, $dec, $pmr, $pmd, $px, $rv, $ep1a, $ep1b, $ep2a, $ep2b")
     #  Minimum allowed parallax and factor giving maximum allowed transverse
@@ -3000,11 +3003,14 @@ function pmsafe(ra::Float64, dec::Float64, pmr::Float64, pmd::Float64,
     #  Proper motion in one year (radians)
     pm = F*seps(ra, dec, ra+pmr, dec+pmd)
     #  Override the parallax to reduce chances of a warning status.
-    if px < pm px = pm end
-    if px < PXMIN px = PXMIN end
+    if plx < pm
+        plx = pm      # @warn
+    elseif plx < PXMIN
+        plx = PXMIN   # @warn
+    end
     #  Carry out the transformation using the modified parallax.
     ### println("$ra, $dec, $pmr, $pmd, $px, $rv, $ep1a, $ep1b, $ep2a, $ep2b")
-    starpm(ra, dec, pmr, pmd, px, rv, ep1a, ep1b, ep2a, ep2b)
+    starpm(ra, dec, pmr, pmd, plx, rv, ep1a, ep1b, ep2a, ep2b)
 end
 
 """
